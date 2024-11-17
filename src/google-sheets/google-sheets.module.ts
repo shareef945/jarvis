@@ -4,6 +4,6 @@ import { GoogleSheetsService } from './google-sheets.service';
 
 @Module({
   controllers: [GoogleSheetsController],
-  providers: [GoogleSheetsService]
+  providers: [GoogleSheetsService],
 })
 export class GoogleSheetsModule {}

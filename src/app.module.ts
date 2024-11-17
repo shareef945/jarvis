@@ -4,9 +4,22 @@ import { AppService } from './app.service';
 import { TelegramModule } from './telegram/telegram.module';
 import { GoogleSheetsModule } from './google-sheets/google-sheets.module';
 import { FileManagerModule } from './file-manager/file-manager.module';
+import { ConfigModule } from '@nestjs/config';
+import { appConfig, validationSchema } from './app.config';
+import { LoggerModule } from './common/logger/logger.module';
 
 @Module({
-  imports: [TelegramModule, GoogleSheetsModule, FileManagerModule],
+  imports: [
+    TelegramModule,
+    GoogleSheetsModule,
+    FileManagerModule,
+    LoggerModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [appConfig],
+      validationSchema,
+    }),
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

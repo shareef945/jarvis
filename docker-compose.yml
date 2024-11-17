@@ -1,0 +1,14 @@
+services:
+  jarvis:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    command: sh -c "pnpm run start:dev"
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app/jarvis
+    working_dir: /usr/src/app/jarvis
