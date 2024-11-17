@@ -1,25 +1,44 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Bot, Context } from 'grammy';
 import { AppConfig, InjectAppConfig } from '../app.config';
+import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
-  private readonly logger = new Logger(TelegramService.name);
   private bot: Bot;
 
-  constructor(@InjectAppConfig() private readonly appConfig: AppConfig) {
+  constructor(
+    @InjectAppConfig() private readonly appConfig: AppConfig,
+    @InjectPinoLogger(TelegramService.name) private readonly logger: PinoLogger,
+  ) {
+    this.logger.info('Initializing TelegramService...');
     this.initializeBot();
   }
 
   private initializeBot() {
-    this.bot = new Bot(this.appConfig.telegram.botToken);
-    this.setupHandlers();
-  }
+    try {
+      this.logger.info('Initializing bot instance...');
+      if (!this.appConfig.telegram.botToken) {
+        throw new Error('Bot token is not configured');
+      }
 
-  private setupHandlers() {
-    this.bot.command('help', this.handleHelp.bind(this));
-    this.bot.command('list_workbooks', this.handleListWorkbooks.bind(this));
-    // Add other command handlers
+      this.bot = new Bot(this.appConfig.telegram.botToken);
+      this.logger.info('Bot instance created successfully');
+
+      // Add some basic error handlers
+      this.bot.catch((err) => {
+        this.logger.error('Bot encountered an error:', err);
+      });
+    } catch (error) {
+      this.logger.error('Failed to initialize bot:', {
+        error: {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        },
+      });
+      throw error;
+    }
   }
 
   async onModuleInit() {
@@ -28,34 +47,31 @@ export class TelegramService implements OnModuleInit {
 
   private async startBot() {
     try {
-      await this.bot.start();
-      this.logger.log('Bot started successfully');
+      this.logger.info('Attempting to start bot...');
+      this.logger.info(
+        `Bot token length: ${this.appConfig.telegram.botToken?.length || 0}`,
+      );
+
+      if (!this.bot) {
+        throw new Error('Bot instance not initialized');
+      }
+
+      await this.bot.start({
+        onStart: (botInfo) => {
+          this.logger.info(`Bot connected as @${botInfo.username}`);
+        },
+      });
+
+      this.logger.info('Bot started successfully');
     } catch (error) {
-      this.logger.error('Failed to start bot:', error);
+      this.logger.error('Failed to start bot. Error details:', {
+        error: {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        },
+      });
       throw error;
     }
-  }
-
-  private async handleHelp(ctx: Context) {
-    const userId = ctx.from?.id;
-    const userRole = 'guest'; // You might want to implement role logic here
-
-    await ctx.reply(
-      `Welcome to SAI Technology's RPA service!\n\n` +
-        `Your user ID: ${userId}\n` +
-        `Your role: ${userRole}\n\n` +
-        `Available commands:\n` +
-        this.getCommandsList(userRole),
-    );
-  }
-
-  private getCommandsList(userRole: string): string {
-    // Implement command list logic based on user role
-    return '/help - Show this help message\n/list_workbooks - List available workbooks';
-  }
-
-  private async handleListWorkbooks(ctx: Context) {
-    // Implement workbook listing logic
-    await ctx.reply('Workbook listing functionality coming soon...');
   }
 }

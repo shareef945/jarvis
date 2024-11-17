@@ -9,12 +9,17 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
           target: 'pino-pretty',
           options: {
             colorize: true,
-            ignore: 'pid',
+            ignore: 'pid,hostname',
             singleLine: true,
+            translateTime: 'UTC:yyyy-mm-dd HH:MM:ss.l',
+            level: 'debug', // Set to debug to see more logs
           },
         },
+        autoLogging: true, // Enable auto logging
+        level: 'debug', // Set to debug to see more logs
       },
     }),
   ],
+  exports: [PinoLoggerModule],
 })
 export class LoggerModule {}

@@ -26,6 +26,7 @@ export const appConfig = registerAs('app', () => {
     app: {
       downloadDir: process.env.DOWNLOAD_DIR || '/app/downloads',
       adminChatId: process.env.ADMIN_CHAT_ID,
+      port: process.env.PORT,
       userRoles: parseUserRoles(process.env.USER_ROLES),
     },
   };
