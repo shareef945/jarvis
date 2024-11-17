@@ -6,6 +6,7 @@ import { CommandHandler } from './commands/handler/command.handler';
 import { SheetsAddRowCommand } from './commands/sheets-addrow.command';
 import { GoogleSheetsModule } from '../google-sheets/google-sheets.module';
 import { StartCommand } from './commands/start.command';
+import { RecordPaymentCommand } from './commands/record-payment.command';
 
 @Module({
   imports: [DiscoveryModule, GoogleSheetsModule],
@@ -15,6 +16,7 @@ import { StartCommand } from './commands/start.command';
     HelpCommand,
     SheetsAddRowCommand,
     StartCommand,
+    RecordPaymentCommand,
   ],
 })
 export class TelegramModule {}

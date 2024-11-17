@@ -71,7 +71,7 @@ export class CommandHandler implements OnModuleInit {
             return;
           }
 
-          // this.logger.debug(`Executing ${name} command handler`);
+          this.logger.debug(`Executing ${name} command handler`);
           await command.execute(ctx);
           // this.logger.debug(`Finished executing ${name} command`);
         } catch (error) {

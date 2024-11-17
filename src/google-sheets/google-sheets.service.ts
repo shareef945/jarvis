@@ -1,16 +1,68 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { google } from 'googleapis';
 import { JWT } from 'google-auth-library';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class GoogleSheetsService {
-  private readonly logger = new Logger(GoogleSheetsService.name);
   private sheets;
   private drive;
+  public currentWorkbook: string;
+  public currentWorksheet: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    @InjectPinoLogger(GoogleSheetsService.name)
+    private readonly logger: PinoLogger,
+  ) {
     this.initializeServices();
+  }
+
+  public readonly PAYMENT_CONFIGS = {
+    sales_tracking: {
+      workbook_id: '1olamGPcDmnUUNDfWJI4wSugQm5-_osezxLzm7fWeEos',
+      worksheet_name: 'Financial Data',
+      product_data: {
+        worksheet_name: 'Product Information',
+        range: 'A2:P',
+        columns: {
+          product_id: 2,
+          customer_name: 4,
+          weekly_installment: 13,
+          other_info: 3,
+        },
+      },
+      columns: {
+        product_id: 0,
+        amount: 2,
+        date: 3,
+        days_late: 4,
+      },
+    },
+  };
+
+  async getValues(spreadsheetId: string, range: string) {
+    try {
+      this.logger.debug(
+        `Attempting to get values from spreadsheet: ${spreadsheetId}, range: ${range}`,
+      );
+
+      if (!this.sheets) {
+        throw new Error('Google Sheets service not initialized');
+      }
+
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range,
+      });
+
+      this.logger.debug('Successfully retrieved values from spreadsheet');
+      return response.data.values;
+    } catch (error) {
+      this.logger.error('Error getting values:', error);
+      throw error;
+    }
   }
 
   private async initializeServices() {
@@ -25,9 +77,10 @@ export class GoogleSheetsService {
 
       this.sheets = google.sheets({ version: 'v4', auth });
       this.drive = google.drive({ version: 'v3', auth });
-      this.logger.log('Google services initialized successfully');
+      this.logger.info('Google services initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize Google services:', error);
+      throw new Error('Failed to initialize Google services');
     }
   }
 
@@ -57,5 +110,68 @@ export class GoogleSheetsService {
       this.logger.error('Error listing worksheets:', error);
       throw error;
     }
+  }
+
+  async getProductDetails(productId: string) {
+    try {
+      const config = this.PAYMENT_CONFIGS.sales_tracking;
+      const range = `${config.product_data.worksheet_name}!${config.product_data.range}`;
+
+      const response = await this.sheets.spreadsheets.values.get({
+        spreadsheetId: config.workbook_id,
+        range,
+      });
+
+      const rows = response.data.values;
+      if (!rows) return null;
+
+      return rows.find(
+        (row) => row[config.product_data.columns.product_id] === productId,
+      );
+    } catch (error) {
+      this.logger.error('Error getting product details:', error);
+      throw error;
+    }
+  }
+
+  async recordPayment(productId: string, amount: number) {
+    try {
+      const config = this.PAYMENT_CONFIGS.sales_tracking;
+      const today = new Date().toISOString().split('T')[0];
+      const daysLate = await this.calculateDaysLate(productId);
+
+      const rowData = Array(
+        Math.max(...Object.values(config.columns)) + 1,
+      ).fill('');
+      rowData[config.columns.product_id] = productId;
+      rowData[config.columns.amount] = amount.toString();
+      rowData[config.columns.date] = today;
+      rowData[config.columns.days_late] = daysLate.toString();
+
+      await this.sheets.spreadsheets.values.append({
+        spreadsheetId: config.workbook_id,
+        range: config.worksheet_name,
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+          values: [rowData],
+        },
+      });
+
+      return {
+        productId,
+        amount,
+        date: today,
+        daysLate,
+      };
+    } catch (error) {
+      this.logger.error('Error recording payment:', error);
+      throw error;
+    }
+  }
+
+  async calculateDaysLate(productId: string): Promise<number> {
+    this.logger.info(productId);
+    // Implement your days late calculation logic here
+    return 0; // Placeholder
   }
 }
