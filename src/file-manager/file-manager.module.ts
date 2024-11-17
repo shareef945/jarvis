@@ -4,6 +4,7 @@ import { FileManagerController } from './file-manager.controller';
 
 @Module({
   providers: [FileManagerService],
-  controllers: [FileManagerController]
+  controllers: [FileManagerController],
+  exports: [FileManagerService],
 })
 export class FileManagerModule {}

@@ -12,11 +12,11 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
             ignore: 'pid,hostname',
             singleLine: true,
             translateTime: 'UTC:yyyy-mm-dd HH:MM:ss.l',
-            level: 'debug', // Set to debug to see more logs
+            level: 'debug',
           },
         },
-        autoLogging: true, // Enable auto logging
-        level: 'debug', // Set to debug to see more logs
+        autoLogging: true,
+        level: 'debug',
       },
     }),
   ],

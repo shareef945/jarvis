@@ -1,7 +1,8 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Bot, Context } from 'grammy';
+import { Bot } from 'grammy';
 import { AppConfig, InjectAppConfig } from '../app.config';
 import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
+import { CommandHandler } from './commands/handler/command.handler';
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
@@ -10,67 +11,53 @@ export class TelegramService implements OnModuleInit {
   constructor(
     @InjectAppConfig() private readonly appConfig: AppConfig,
     @InjectPinoLogger(TelegramService.name) private readonly logger: PinoLogger,
-  ) {
-    this.logger.info('Initializing TelegramService...');
-    this.initializeBot();
+    private readonly commandHandler: CommandHandler,
+  ) {}
+
+  async onModuleInit() {
+    await this.initializeBot();
+    await this.startBot();
   }
 
-  private initializeBot() {
+  private async initializeBot() {
     try {
-      this.logger.info('Initializing bot instance...');
       if (!this.appConfig.telegram.botToken) {
         throw new Error('Bot token is not configured');
       }
 
       this.bot = new Bot(this.appConfig.telegram.botToken);
-      this.logger.info('Bot instance created successfully');
 
-      // Add some basic error handlers
-      this.bot.catch((err) => {
-        this.logger.error('Bot encountered an error:', err);
-      });
+      // Wait for commands to be discovered
+      await this.commandHandler.onModuleInit();
+
+      // Register commands
+      this.commandHandler.registerCommands(this.bot);
+
+      this.logger.info('Bot initialized successfully');
     } catch (error) {
-      this.logger.error('Failed to initialize bot:', {
-        error: {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        },
-      });
+      this.logger.error('Failed to initialize bot:', error);
       throw error;
     }
   }
 
-  async onModuleInit() {
-    await this.startBot();
-  }
-
   private async startBot() {
     try {
-      this.logger.info('Attempting to start bot...');
-      this.logger.info(
-        `Bot token length: ${this.appConfig.telegram.botToken?.length || 0}`,
-      );
+      this.logger.info('Starting bot...');
 
-      if (!this.bot) {
-        throw new Error('Bot instance not initialized');
-      }
+      await this.bot.api.setMyCommands([
+        { command: 'start', description: 'Start interacting with JARVIS' },
+        { command: 'help', description: 'Show available commands' },
+        { command: 'addrow', description: 'Add a new row to a spreadsheet' },
+      ]);
 
       await this.bot.start({
+        drop_pending_updates: true,
         onStart: (botInfo) => {
-          this.logger.info(`Bot connected as @${botInfo.username}`);
+          this.logger.info(`Bot @${botInfo.username} started successfully`);
         },
       });
-
-      this.logger.info('Bot started successfully');
     } catch (error) {
-      this.logger.error('Failed to start bot. Error details:', {
-        error: {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        },
-      });
+      this.logger.error('Failed to start bot:', error);
       throw error;
     }
   }
