@@ -18,17 +18,22 @@ export class StartCommand extends BaseCommand {
   }
 
   async execute(ctx: Context): Promise<void> {
-    const message = `
-👋 Hello! I am JARVIS, your personal assistant.
+    this.logger.debug('Executing start command');
+    const message = `👋 Hello! I am JARVIS, your personal assistant.
 
 I can help you with:
 - Managing Google Sheets
 - File management
 - And more!
 
-Use /help to see all available commands.
-    `;
+Use /help to see all available commands.`;
 
-    await ctx.reply(message, { parse_mode: 'Markdown' });
+    try {
+      await ctx.reply(message);
+      this.logger.debug('Start command response sent successfully');
+    } catch (error) {
+      this.logger.error('Error sending start command response:', error);
+      throw error;
+    }
   }
 }

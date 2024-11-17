@@ -66,11 +66,14 @@ export class CommandHandler implements OnModuleInit {
           ) as CommandMetadata;
 
           if (text === `/${name} help` && metadata.usage) {
+            this.logger.debug(`Sending usage info for ${name}`);
             await ctx.reply(metadata.usage);
             return;
           }
 
+          // this.logger.debug(`Executing ${name} command handler`);
           await command.execute(ctx);
+          // this.logger.debug(`Finished executing ${name} command`);
         } catch (error) {
           this.logger.error(`Error executing command ${name}:`, error);
           await ctx.reply(
