@@ -11,6 +11,36 @@ export const TELEGRAM_BOT_COMMANDS = [
     role: 'admin',
   },
   {
+    command: 'record_maintenance_cost',
+    description: 'record maintenance cost for sai-real estate',
+    role: 'admin',
+  },
+  {
+    command: 'record_capex',
+    description: 'record capex for sai-real estate',
+    role: 'admin',
+  },
+  {
+    command: 'record_airbnb_revenue',
+    description: 'record airbnb revenue',
+    role: 'admin',
+  },
+  {
+    command: 'record_airbnb_payout',
+    description: 'record airbnb payout',
+    role: 'admin',
+  },
+  {
+    command: 'record_money_lent',
+    description: 'record money lent out',
+    role: 'admin',
+  },
+  {
+    command: 'record_money_received',
+    description: 'record money received from loan',
+    role: 'admin',
+  },
+  {
     command: 'file',
     description: 'handle file uploads and downloads',
     role: 'guest',
