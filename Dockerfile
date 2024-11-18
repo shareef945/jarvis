@@ -14,15 +14,18 @@ RUN npm install -g pnpm @nestjs/cli
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Set Python path and install dependencies
+# Set Python path and install ALL dependencies (including dev dependencies)
 ENV PYTHON=/usr/bin/python3
-RUN pnpm install --prod
+RUN pnpm install
 
 # Copy application files
 COPY . .
 
 # Build the application
 RUN pnpm run build
+
+# Clean up dev dependencies after build
+RUN pnpm install --prod
 
 EXPOSE 3000
 
