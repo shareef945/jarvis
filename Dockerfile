@@ -14,8 +14,9 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies with Python path specified
-RUN pnpm install --prod --python=/usr/bin/python3
+# Set Python path and install dependencies
+ENV PYTHON=/usr/bin/python3
+RUN pnpm install --prod
 
 # Copy application files
 COPY . .
