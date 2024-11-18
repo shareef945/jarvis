@@ -2,6 +2,9 @@ FROM node:lts
 
 WORKDIR /usr/src/app
 
+# Create directory for credentials
+RUN mkdir -p /usr/src/app/credentials
+
 RUN apt-get update && \
     apt-get install -y python3 make g++ && \
     apt-get clean && \
@@ -15,4 +18,6 @@ COPY . .
 RUN pnpm run build
 RUN pnpm install --prod
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+
+# Update the CMD to ensure credentials file is created before starting
+CMD sh -c "echo \"$GOOGLE_SERVICE_ACCOUNT\" > /usr/src/app/credentials/service-account.json && node dist/main.js"

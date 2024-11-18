@@ -3,7 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # target: development
     command: sh -c "pnpm run start:dev"
     env_file:
       - .env
@@ -11,4 +10,6 @@ services:
       - "3000:3000"
     volumes:
       - .:/usr/src/app/jarvis
+      - type: tmpfs
+        target: /usr/src/app/credentials
     working_dir: /usr/src/app/jarvis
