@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { google } from 'googleapis';
 import { JWT } from 'google-auth-library';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { AppConfig, InjectAppConfig } from 'src/app.config';
 
 @Injectable()
 export class GoogleSheetsService {
@@ -12,7 +12,7 @@ export class GoogleSheetsService {
   public currentWorksheet: string;
 
   constructor(
-    private configService: ConfigService,
+    @InjectAppConfig() private readonly appConfig: AppConfig,
     @InjectPinoLogger(GoogleSheetsService.name)
     private readonly logger: PinoLogger,
   ) {
@@ -21,10 +21,10 @@ export class GoogleSheetsService {
 
   public readonly PAYMENT_CONFIGS = {
     sales_tracking: {
-      workbook_id: '1olamGPcDmnUUNDfWJI4wSugQm5-_osezxLzm7fWeEos',
-      worksheet_name: 'Financial Data',
+      workbook_id: this.appConfig.google.sheets.microfinance.workbookId,
+      worksheet_name: this.appConfig.google.sheets.microfinance.sheetName,
       product_data: {
-        worksheet_name: 'Product Information',
+        worksheet_name: this.appConfig.google.sheets.microfinance.productInfo,
         range: 'A2:P',
         columns: {
           product_id: 2,
@@ -44,9 +44,9 @@ export class GoogleSheetsService {
 
   async getValues(spreadsheetId: string, range: string) {
     try {
-      this.logger.debug(
-        `Attempting to get values from spreadsheet: ${spreadsheetId}, range: ${range}`,
-      );
+      // this.logger.debug(
+      //   `Attempting to get values from spreadsheet: ${spreadsheetId}, range: ${range}`,
+      // );
 
       if (!this.sheets) {
         throw new Error('Google Sheets service not initialized');
@@ -57,7 +57,7 @@ export class GoogleSheetsService {
         range,
       });
 
-      this.logger.debug('Successfully retrieved values from spreadsheet');
+      // this.logger.debug('Successfully retrieved values from spreadsheet');
       return response.data.values;
     } catch (error) {
       this.logger.error('Error getting values:', error);
@@ -68,7 +68,7 @@ export class GoogleSheetsService {
   private async initializeServices() {
     try {
       const auth = new JWT({
-        keyFile: this.configService.get('google.serviceAccountPath'),
+        keyFile: this.appConfig.google.serviceAccountPath,
         scopes: [
           'https://www.googleapis.com/auth/spreadsheets',
           'https://www.googleapis.com/auth/drive.readonly',
@@ -77,7 +77,7 @@ export class GoogleSheetsService {
 
       this.sheets = google.sheets({ version: 'v4', auth });
       this.drive = google.drive({ version: 'v3', auth });
-      this.logger.info('Google services initialized successfully');
+      this.logger.info('Google sheet & drive initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize Google services:', error);
       throw new Error('Failed to initialize Google services');
@@ -138,7 +138,7 @@ export class GoogleSheetsService {
     try {
       const config = this.PAYMENT_CONFIGS.sales_tracking;
       const today = new Date().toISOString().split('T')[0];
-      const daysLate = await this.calculateDaysLate(productId);
+      const daysLate = await this.calculateDaysLate();
 
       const rowData = Array(
         Math.max(...Object.values(config.columns)) + 1,
@@ -156,7 +156,9 @@ export class GoogleSheetsService {
           values: [rowData],
         },
       });
-
+      this.logger.info(
+        `Payment recorded successfully for ${productId} - GHS ${amount.toString()}`,
+      );
       return {
         productId,
         amount,
@@ -169,8 +171,7 @@ export class GoogleSheetsService {
     }
   }
 
-  async calculateDaysLate(productId: string): Promise<number> {
-    this.logger.info(productId);
+  async calculateDaysLate(): Promise<number> {
     // Implement your days late calculation logic here
     return 0; // Placeholder
   }

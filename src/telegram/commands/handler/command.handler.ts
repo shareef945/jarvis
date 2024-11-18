@@ -7,10 +7,12 @@ import {
   COMMAND_METADATA,
   CommandMetadata,
 } from 'src/common/decorators/command.decorator';
+import { RecordPaymentCommand } from '../record-payment.command';
 
 @Injectable()
 export class CommandHandler implements OnModuleInit {
   private commands = new Map<string, BaseCommand>();
+  private isInitialized = false;
 
   constructor(
     @InjectPinoLogger(CommandHandler.name)
@@ -20,10 +22,17 @@ export class CommandHandler implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.discoverCommands();
+    if (!this.isInitialized) {
+      await this.discoverCommands();
+      this.isInitialized = true;
+    }
   }
 
   private async discoverCommands() {
+    if (this.commands.size > 0) {
+      return;
+    }
+
     const wrappers = this.discoveryService.getProviders();
 
     wrappers.forEach((wrapper) => {
@@ -40,16 +49,26 @@ export class CommandHandler implements OnModuleInit {
         ) as CommandMetadata;
 
         if (metadata?.name) {
-          this.commands.set(metadata.name, instance);
           this.logger.debug(`Discovered command: ${metadata.name}`);
+          this.commands.set(metadata.name, instance);
         }
       }
     });
 
-    this.logger.debug(`Total commands discovered: ${this.commands.size}`);
+    // this.logger.debug(`Total commands discovered: ${this.commands.size}`);
   }
 
-  registerCommands(bot: Bot) {
+  async registerCommands(bot: Bot) {
+    if (!this.isInitialized) {
+      await this.discoverCommands();
+      this.isInitialized = true;
+    }
+
+    if (this.commands.size === 0) {
+      this.logger.warn('No commands available for registration');
+      return;
+    }
+
     this.logger.debug(`Registering ${this.commands.size} commands`);
 
     // Register command handlers
@@ -66,35 +85,38 @@ export class CommandHandler implements OnModuleInit {
           ) as CommandMetadata;
 
           if (text === `/${name} help` && metadata.usage) {
-            this.logger.debug(`Sending usage info for ${name}`);
             await ctx.reply(metadata.usage);
             return;
           }
 
           this.logger.debug(`Executing ${name} command handler`);
           await command.execute(ctx);
-          // this.logger.debug(`Finished executing ${name} command`);
         } catch (error) {
           this.logger.error(`Error executing command ${name}:`, error);
-          await ctx.reply(
-            'Sorry, something went wrong while processing your command.',
-          );
+          await ctx.reply('An error occurred while executing the command.');
         }
       });
     });
 
+    // Register callback query handlers for payment product selection
+    bot.on('callback_query:data', async (ctx) => {
+      const callbackData = ctx.callbackQuery.data;
+      if (callbackData?.startsWith('payment_prod:')) {
+        const recordPaymentCommand = this.commands.get(
+          'record_payment',
+        ) as RecordPaymentCommand;
+        if (recordPaymentCommand) {
+          await recordPaymentCommand.handleProductSelection(ctx);
+        }
+      }
+    });
     // Register unknown command handler
     bot.on('message:text', async (ctx) => {
-      const text = ctx.message?.text?.trim();
-
-      if (text?.startsWith('/')) {
-        const command = text.split(' ')[0].substring(1);
-        if (!this.commands.has(command)) {
-          await ctx.reply(
-            'Unknown command. Try using /help to see available commands.',
-            { parse_mode: 'Markdown' },
-          );
-        }
+      const recordPaymentCommand = this.commands.get(
+        'record_payment',
+      ) as RecordPaymentCommand;
+      if (recordPaymentCommand) {
+        await recordPaymentCommand.handlePaymentAmount(ctx);
       }
     });
   }

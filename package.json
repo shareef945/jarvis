@@ -21,20 +21,26 @@
   },
   "dependencies": {
     "@grammyjs/types": "^3.16.0",
+    "@mtproto/core": "^6.3.0",
+    "@nestjs/axios": "^3.1.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
+    "big-integer": "^1.6.52",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.7",
+    "file-type": "^16.5.3",
     "google-auth-library": "^9.15.0",
     "googleapis": "^144.0.0",
     "grammy": "^1.32.0",
     "joi": "^17.13.3",
+    "mtproto": "^0.0.1",
     "nestjs-pino": "^4.1.0",
     "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "telegram": "^2.26.6"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

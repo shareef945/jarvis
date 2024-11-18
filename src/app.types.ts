@@ -6,3 +6,7 @@ export interface Command {
   usage?: string;
   execute(ctx: Context): Promise<void>;
 }
+
+export interface ProgressCallback {
+  (current: number, total: number): Promise<void>;
+}

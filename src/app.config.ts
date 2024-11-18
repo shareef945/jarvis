@@ -21,13 +21,22 @@ export const appConfig = registerAs('app', () => {
       botToken: process.env.BOT_TOKEN,
     },
     google: {
-      serviceAccountPath: 'service-account.json',
+      serviceAccountPath: process.env.GOOGLE_SERVICE_ACCOUNT_PATH,
+      sheets: {
+        microfinance: {
+          workbookId: process.env.MICROFINANCE_WORKBOOK_ID,
+          sheetName: process.env.MINCROFINANCE_WORKBOOK_INPUT_SHEETNAME,
+          productInfo:
+            process.env.MINCROFINANCE_WORKBOOK_PRODUCT_DATA_SHEETNAME,
+        },
+      },
     },
     app: {
       downloadDir: process.env.DOWNLOAD_DIR || '/app/downloads',
       adminChatId: process.env.ADMIN_CHAT_ID,
       port: process.env.PORT,
       userRoles: parseUserRoles(process.env.USER_ROLES),
+      env: process.env.NODE_ENV || 'dev',
     },
   };
 });
@@ -43,4 +52,9 @@ export const validationSchema = Joi.object({
   USER_ROLES: Joi.string().required(),
   DOWNLOAD_DIR: Joi.string().required(),
   ADMIN_CHAT_ID: Joi.number().required(),
+  GOOGLE_SERVICE_ACCOUNT_PATH: Joi.string().required(),
+  MICROFINANCE_WORKBOOK_ID: Joi.string().required(),
+  MINCROFINANCE_WORKBOOK_INPUT_SHEETNAME: Joi.string().required(),
+  MINCROFINANCE_WORKBOOK_PRODUCT_DATA_SHEETNAME: Joi.string().required(),
+  NODE_ENV: Joi.string().valid('dev', 'prod').default('dev'),
 });

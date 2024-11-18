@@ -5,18 +5,21 @@ import { DiscoveryModule } from '@nestjs/core';
 import { CommandHandler } from './commands/handler/command.handler';
 import { SheetsAddRowCommand } from './commands/sheets-addrow.command';
 import { GoogleSheetsModule } from '../google-sheets/google-sheets.module';
-import { StartCommand } from './commands/start.command';
 import { RecordPaymentCommand } from './commands/record-payment.command';
+import { HttpModule } from '@nestjs/axios';
+import { FileCommand } from './commands/file.command';
+import { FileManagerModule } from 'src/file-manager/file-manager.module';
 
 @Module({
-  imports: [DiscoveryModule, GoogleSheetsModule],
+  imports: [DiscoveryModule, GoogleSheetsModule, HttpModule, FileManagerModule],
   providers: [
     TelegramService,
     CommandHandler,
     HelpCommand,
     SheetsAddRowCommand,
-    StartCommand,
     RecordPaymentCommand,
+    FileCommand,
   ],
+  exports: [TelegramService],
 })
 export class TelegramModule {}

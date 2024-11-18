@@ -41,14 +41,14 @@ export class RecordPaymentCommand extends BaseCommand {
   async execute(ctx: Context): Promise<void> {
     try {
       const config = this.sheetsService.PAYMENT_CONFIGS.sales_tracking;
-      this.logger.debug(
-        `Attempting to fetch data with config: ${JSON.stringify(config)}`,
-      );
+      // this.logger.debug(
+      //   `Attempting to fetch data with config: ${JSON.stringify(config)}`,
+      // );
 
       const range = `${config.product_data.worksheet_name}!${config.product_data.range}`;
-      this.logger.debug(
-        `Fetching from spreadsheet: ${config.workbook_id}, range: ${range}`,
-      );
+      // this.logger.debug(
+      //   `Fetching from spreadsheet: ${config.workbook_id}, range: ${range}`,
+      // );
 
       const rows = await this.sheetsService.getValues(
         config.workbook_id,
@@ -67,7 +67,7 @@ export class RecordPaymentCommand extends BaseCommand {
       // Clear previous cache
       this.productCache = {};
 
-      this.logger.debug(`Processing ${rows.length} rows from spreadsheet`);
+      // this.logger.debug(`Processing ${rows.length} rows from spreadsheet`);
 
       for (const row of rows) {
         // Check if product is active (column 15)
@@ -110,7 +110,7 @@ export class RecordPaymentCommand extends BaseCommand {
             .row();
 
           activeCount++;
-          this.logger.debug(`Added product to keyboard: ${productId}`);
+          // this.logger.debug(`Added product to keyboard: ${productId}`);
         }
       }
 
@@ -120,7 +120,7 @@ export class RecordPaymentCommand extends BaseCommand {
         return;
       }
 
-      this.logger.debug(`Sending reply with ${activeCount} active products`);
+      // this.logger.debug(`Sending reply with ${activeCount} active products`);
       await ctx.reply(
         '🧾 Record Payment\n\nSelect a product from the list below:',
         {
@@ -159,7 +159,7 @@ export class RecordPaymentCommand extends BaseCommand {
           `Customer: ${product.customerName}\n` +
           `Product ID: ${product.productId}\n` +
           `Weekly Installment: ${product.weeklyInstallment}\n\n` +
-          'Simply type the payment amount (e.g., 500)\n' +
+          'Enter amount \n' +
           "Type 'cancel' to abort the operation.",
       );
 

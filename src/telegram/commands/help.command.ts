@@ -3,6 +3,8 @@ import { Context } from 'grammy';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { BaseCommand } from './base.command';
 import { Command } from 'src/common/decorators/command.decorator';
+import { generateHelpMessage } from 'src/app.const';
+import { AppConfig, InjectAppConfig } from 'src/app.config';
 
 @Injectable()
 @Command({
@@ -13,23 +15,19 @@ export class HelpCommand extends BaseCommand {
   constructor(
     @InjectPinoLogger(HelpCommand.name)
     protected readonly logger: PinoLogger,
+    @InjectAppConfig() private readonly appConfig: AppConfig,
   ) {
     super(logger);
   }
 
   async execute(ctx: Context): Promise<void> {
-    const helpMessage = `
-🤖 *JARVIS Help Menu*
-
-Available Commands:
-/help - Show this help message
-/sheets - List available spreadsheets
-/addrow - Add a new row to a sheet
-
-For detailed usage of any command, type:
-<command> help (e.g., /addrow help)
-    `;
-
-    await ctx.reply(helpMessage, { parse_mode: 'Markdown' });
+    try {
+      const userId = ctx.from?.id;
+      const userRole = userId ? this.appConfig.app.userRoles[userId] : 'guest';
+      await ctx.reply(generateHelpMessage(userRole));
+    } catch (error) {
+      this.logger.error('Error sending help message:', error);
+      await ctx.reply('Sorry, there was an error displaying the help menu.');
+    }
   }
 }
