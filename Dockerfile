@@ -1,35 +1,28 @@
-FROM node:alpine as development
+FROM node:lts
 
 WORKDIR /usr/src/app
 
-COPY package.json ./
-COPY pnpm-lock.yaml ./
-COPY tsconfig.json tsconfig.json
+# Install Python and build dependencies
+RUN apt-get update && \
+    apt-get install -y python3 make g++ && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
+# Install pnpm globally
 RUN npm install -g pnpm
 
-RUN pnpm install
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
 
+# Install dependencies with Python path specified
+RUN pnpm install --prod --python=/usr/bin/python3
+
+# Copy application files
 COPY . .
 
-RUN pnpm install
-
+# Build the application
 RUN pnpm run build
 
-FROM node:alpine as production
+EXPOSE 3000
 
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
-WORKDIR /usr/src/app
-
-COPY package.json ./
-COPY pnpm-lock.yaml ./
-
-RUN npm install -g pnpm
-
-RUN pnpm install --prod
-
-COPY --from=development /usr/src/app/dist ./dist
-
-CMD ["node","dist/main.js"]
+CMD ["node", "dist/main.js"]

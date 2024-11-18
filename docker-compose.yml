@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: development
+      # target: development
     command: sh -c "pnpm run start:dev"
     env_file:
       - .env
