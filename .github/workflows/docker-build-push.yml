@@ -38,6 +38,7 @@ jobs:
           push: true
           tags: 192.168.100.2:5000/telegram-bot:latest
           platforms: linux/amd64,linux/arm64
+          target: production
           cache-from: type=registry,ref=192.168.100.2:5000/telegram-bot:latest
           cache-to: type=inline
 
