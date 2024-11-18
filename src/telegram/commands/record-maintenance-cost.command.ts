@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UseGuards } from '@nestjs/common';
 import { Context } from 'grammy';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { GoogleSheetsService } from '../../google-sheets/google-sheets.service';
@@ -9,6 +9,8 @@ import {
 } from 'src/common/decorators/command.decorator';
 import { BaseCommand } from './base.command';
 import { InlineKeyboard } from 'grammy';
+import { RolesGuard } from 'src/common/guards/role.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 interface ProductCache {
   [key: string]: {
@@ -25,6 +27,8 @@ interface ProductCache {
   description: 'Record a payment for a product',
   usage: 'Usage: /record_payment',
 })
+@UseGuards(RolesGuard)
+@Roles('admin')
 export class RecordPaymentCommand extends BaseCommand {
   private readonly metadata: CommandMetadata;
   private productCache: ProductCache = {};

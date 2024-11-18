@@ -9,6 +9,7 @@ import { RecordPaymentCommand } from './commands/record-payment.command';
 import { HttpModule } from '@nestjs/axios';
 import { FileCommand } from './commands/file.command';
 import { FileManagerModule } from 'src/file-manager/file-manager.module';
+import { RolesGuard } from 'src/common/guards/role.guard';
 
 @Module({
   imports: [DiscoveryModule, GoogleSheetsModule, HttpModule, FileManagerModule],
@@ -19,6 +20,7 @@ import { FileManagerModule } from 'src/file-manager/file-manager.module';
     SheetsAddRowCommand,
     RecordPaymentCommand,
     FileCommand,
+    RolesGuard,
   ],
   exports: [TelegramService],
 })
