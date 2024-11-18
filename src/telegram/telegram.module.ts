@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 import { HelpCommand } from './commands/help.command';
-import { APP_GUARD, DiscoveryModule } from '@nestjs/core';
+import { DiscoveryModule } from '@nestjs/core';
 import { CommandHandler } from './commands/handler/command.handler';
 import { SheetsAddRowCommand } from './commands/sheets-addrow.command';
 import { GoogleSheetsModule } from '../google-sheets/google-sheets.module';
@@ -20,10 +20,7 @@ import { RolesGuard } from 'src/common/guards/role.guard';
     SheetsAddRowCommand,
     RecordPaymentCommand,
     FileCommand,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
+    RolesGuard,
   ],
   exports: [TelegramService],
 })
