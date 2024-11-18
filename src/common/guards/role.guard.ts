@@ -25,6 +25,10 @@ export class RolesGuard implements CanActivate {
     const userId = ctx.from?.id;
     const userRoles = this.configService.get('app.userRoles');
 
+    console.log('Required Roles:', requiredRoles);
+    console.log('User ID:', userId);
+    console.log('User Roles Config:', userRoles);
+
     if (!userId || !userRoles[userId]) return false;
     return requiredRoles.includes(userRoles[userId]);
   }
