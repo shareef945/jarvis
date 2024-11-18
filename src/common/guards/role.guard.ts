@@ -1,14 +1,14 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Context } from 'grammy';
-import { ConfigService } from '@nestjs/config';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import { InjectAppConfig } from 'src/app.config';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private configService: ConfigService,
+    @InjectAppConfig() private readonly appConfig: AppConfig,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -23,7 +23,7 @@ export class RolesGuard implements CanActivate {
 
     const ctx = context.getArgByIndex(0) as Context;
     const userId = ctx.from?.id;
-    const userRoles = this.configService.get('app.userRoles');
+    const userRoles = this.appConfig.app.userRoles;
 
     console.log('Required Roles:', requiredRoles);
     console.log('User ID:', userId);
