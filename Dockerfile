@@ -1,34 +1,35 @@
-# Base image for dependency installation
-FROM node:lts AS base
-WORKDIR /usr/src/app/jarvis
+FROM node:alpine as development
 
-# Install pnpm globally
+WORKDIR /usr/src/app
+
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+COPY tsconfig.json tsconfig.json
+
 RUN npm install -g pnpm
 
-# Copy only necessary files for dependency installation
-COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
 
-# Development stage
-FROM base AS development
-# Copy the rest of the application
 COPY . .
 
-# Run the build step to create the dist folder
+RUN pnpm install
+
 RUN pnpm run build
 
-CMD ["pnpm", "run", "start:dev"]
+FROM node:alpine as production
 
-# Production stage
-FROM base AS production
-ENV NODE_ENV=production
-WORKDIR /usr/src/app/jarvis
+ARG NODE_ENV=production
+ENV NODE_ENV=${NODE_ENV}
 
-# Install only production dependencies
+WORKDIR /usr/src/app
+
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+
+RUN npm install -g pnpm
+
 RUN pnpm install --prod
 
-# Copy built files from development stage
-COPY --from=development /usr/src/app/jarvis/dist ./dist
-COPY service-account.json ./
+COPY --from=development /usr/src/app/dist ./dist
 
-CMD ["node", "dist/main.js"]
+CMD ["node","dist/main.js"]
