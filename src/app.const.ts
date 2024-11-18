@@ -54,7 +54,7 @@ export const generateHelpMessage = (userRole: string = 'guest') => {
   }).join('\n');
 
   return `
-🤖 JARVIS Help Menu
+♻️ JARVIS Help Menu
 👤 Your Role: ${userRole.toUpperCase()}
 
 Available Commands:
