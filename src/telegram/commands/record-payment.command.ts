@@ -135,9 +135,7 @@ export class RecordPaymentCommand extends BaseCommand {
           this.sheetsService.PAYMENT_CONFIGS?.sales_tracking ||
           'Config not available',
       });
-      await ctx.reply(
-        'Sorry, something went wrong while processing your command. Please try again later or contact support.',
-      );
+      await ctx.reply(`Error: $${error}`);
     }
   }
 
