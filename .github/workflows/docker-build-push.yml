@@ -22,7 +22,7 @@ jobs:
       - name: Login to Local Registry
         uses: docker/login-action@v2
         with:
-          registry: registry.saitechnology.co
+          registry: ${{ secrets.REGISTRY_URL }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
@@ -36,7 +36,7 @@ jobs:
           context: ./
           file: ./Dockerfile
           push: true
-          tags: 192.168.100.2:5000/telegram-bot:latest
+          tags: ${{ secrets.REGISTRY_URL }}/telegram-bot:latest
           platforms: linux/arm64
 
       - name: Trigger Coolify Redeploy
