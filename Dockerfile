@@ -13,6 +13,10 @@ RUN pnpm install
 FROM base AS development
 # Copy the rest of the application
 COPY . .
+
+# Run the build step to create the dist folder
+RUN pnpm run build
+
 CMD ["pnpm", "run", "start:dev"]
 
 # Production stage
