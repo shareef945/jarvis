@@ -11,5 +11,9 @@ services:
     volumes:
       - .:/usr/src/app/jarvis
       - type: tmpfs
-        target: /usr/src/app/credentials
+      - service-account:/usr/src/app/credentials
+
     working_dir: /usr/src/app/jarvis
+
+volumes:
+  service-account:

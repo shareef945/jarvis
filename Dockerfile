@@ -19,5 +19,4 @@ RUN pnpm run build
 RUN pnpm install --prod
 EXPOSE 3000
 
-# Update the CMD to ensure credentials file is created before starting
-CMD sh -c "echo \"$GOOGLE_SERVICE_ACCOUNT\" > /usr/src/app/credentials/service-account.json && node dist/main.js"
+CMD ["node", "dist/main.js"]
