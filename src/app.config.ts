@@ -29,6 +29,13 @@ export const appConfig = registerAs('app', () => {
           productInfo:
             process.env.MINCROFINANCE_WORKBOOK_PRODUCT_DATA_SHEETNAME,
         },
+        realEstate: {
+          workbookId: process.env.REAL_ESTATE_WORKBOOK_ID,
+          maintSheet: process.env.REAL_ESTATE_WORKBOOK_MAINT_SHEETNAME,
+          capexSheet: process.env.REAL_ESTATE_WORKBOOK_CAPEX_SHEETNAME,
+          propertyInfo:
+            process.env.REAL_ESTATE_WORKBOOK_PROPERTY_INFO_SHEETNAME,
+        },
       },
     },
     app: {
@@ -56,5 +63,9 @@ export const validationSchema = Joi.object({
   MICROFINANCE_WORKBOOK_ID: Joi.string().required(),
   MINCROFINANCE_WORKBOOK_INPUT_SHEETNAME: Joi.string().required(),
   MINCROFINANCE_WORKBOOK_PRODUCT_DATA_SHEETNAME: Joi.string().required(),
+  REAL_ESTATE_WORKBOOK_ID: Joi.string().required(),
+  REAL_ESTATE_WORKBOOK_MAINT_SHEETNAME: Joi.string().required(),
+  REAL_ESTATE_WORKBOOK_CAPEX_SHEETNAME: Joi.string().required(),
+  REAL_ESTATE_WORKBOOK_PROPERTY_INFO_SHEETNAME: Joi.string().required(),
   NODE_ENV: Joi.string().valid('dev', 'prod').default('dev'),
 });

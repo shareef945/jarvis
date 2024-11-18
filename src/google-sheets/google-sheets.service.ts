@@ -19,7 +19,7 @@ export class GoogleSheetsService {
     this.initializeServices();
   }
 
-  public readonly PAYMENT_CONFIGS = {
+  public readonly GSHEET_CONFIGS = {
     sales_tracking: {
       workbook_id: this.appConfig.google.sheets.microfinance.workbookId,
       worksheet_name: this.appConfig.google.sheets.microfinance.sheetName,
@@ -38,6 +38,26 @@ export class GoogleSheetsService {
         amount: 2,
         date: 3,
         days_late: 4,
+      },
+    },
+    maintenance_cost: {
+      workbook_id: this.appConfig.google.sheets.realEstate.workbookId,
+      worksheet_name: this.appConfig.google.sheets.realEstate.maintSheet,
+      product_data: {
+        worksheet_name: this.appConfig.google.sheets.realEstate.propertyInfo,
+        range: 'A2:P',
+        columns: {
+          unique_id: 2,
+          property_name: 6,
+        },
+      },
+      columns: {
+        date: 0,
+        unique_id: 1,
+        property_name: 2,
+        category: 3,
+        description: 4,
+        amount: 6,
       },
     },
   };
@@ -114,7 +134,7 @@ export class GoogleSheetsService {
 
   async getProductDetails(productId: string) {
     try {
-      const config = this.PAYMENT_CONFIGS.sales_tracking;
+      const config = this.GSHEET_CONFIGS.sales_tracking;
       const range = `${config.product_data.worksheet_name}!${config.product_data.range}`;
 
       const response = await this.sheets.spreadsheets.values.get({
@@ -136,7 +156,7 @@ export class GoogleSheetsService {
 
   async recordPayment(productId: string, amount: number) {
     try {
-      const config = this.PAYMENT_CONFIGS.sales_tracking;
+      const config = this.GSHEET_CONFIGS.sales_tracking;
       const today = new Date().toISOString().split('T')[0];
       const daysLate = await this.calculateDaysLate();
 
