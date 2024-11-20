@@ -2,15 +2,12 @@ import { Injectable, UseGuards } from '@nestjs/common';
 import { Context } from 'grammy';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { GoogleSheetsService } from '../../google-sheets/google-sheets.service';
-import {
-  Command,
-  COMMAND_METADATA,
-  CommandMetadata,
-} from 'src/common/decorators/command.decorator';
-import { BaseCommand } from './base.command';
+import { Command } from 'src/common/decorators/command.decorator';
 import { InlineKeyboard } from 'grammy';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/role.guard';
+
+import { BaseCommand } from './base.command';
 
 interface ProductCache {
   [key: string]: {
@@ -30,7 +27,6 @@ interface ProductCache {
 @UseGuards(RolesGuard)
 @Roles('admin')
 export class RecordPaymentCommand extends BaseCommand {
-  private readonly metadata: CommandMetadata;
   private productCache: ProductCache = {};
 
   constructor(
@@ -39,92 +35,60 @@ export class RecordPaymentCommand extends BaseCommand {
     private readonly sheetsService: GoogleSheetsService,
   ) {
     super(logger);
-    this.metadata = Reflect.getMetadata(COMMAND_METADATA, this.constructor);
   }
-
   async execute(ctx: Context): Promise<void> {
     try {
       const config = this.sheetsService.GSHEET_CONFIGS.sales_tracking;
-      // this.logger.debug(
-      //   `Attempting to fetch data with config: ${JSON.stringify(config)}`,
-      // );
-
       const range = `${config.product_data.worksheet_name}!${config.product_data.range}`;
-      // this.logger.debug(
-      //   `Fetching from spreadsheet: ${config.workbook_id}, range: ${range}`,
-      // );
-
       const rows = await this.sheetsService.getValues(
         config.workbook_id,
         range,
       );
 
       if (!rows || rows.length === 0) {
-        this.logger.debug('No rows returned from spreadsheet');
         await ctx.reply('❌ No products found in the product sheet.');
         return;
       }
 
       const keyboard = new InlineKeyboard();
       let activeCount = 0;
-
-      // Clear previous cache
       this.productCache = {};
 
-      // this.logger.debug(`Processing ${rows.length} rows from spreadsheet`);
-
       for (const row of rows) {
-        // Check if product is active (column 15)
         if (row.length >= 15 && row[15]?.toUpperCase() === 'TRUE') {
-          if (activeCount >= 10) {
-            this.logger.debug(
-              'Reached maximum of 10 active products, breaking loop',
-            );
-            break;
-          }
+          if (activeCount >= 10) break;
 
           const productId = row[config.product_data.columns.product_id];
           const customerName = row[config.product_data.columns.customer_name];
           const weeklyInstallment =
             row[config.product_data.columns.weekly_installment];
 
-          // Validate required fields
           if (!productId || !customerName || !weeklyInstallment) {
-            this.logger.warn('Skipping row due to missing required fields', {
-              productId,
-              customerName,
-              weeklyInstallment,
-            });
             continue;
           }
 
-          // Cache the product details
           this.productCache[productId] = {
             productId,
             customerName,
             weeklyInstallment,
           };
 
-          // Add button to keyboard
           keyboard
             .text(
               `📦 ${productId} | ${customerName}\n💰 Weekly: ${weeklyInstallment}`,
-              `payment_prod:${productId}`,
+              `record_payment_callback:${productId}`,
             )
             .row();
 
           activeCount++;
-          // this.logger.debug(`Added product to keyboard: ${productId}`);
         }
       }
 
       if (activeCount === 0) {
-        this.logger.debug('No active products found after processing all rows');
         await ctx.reply('❌ No active products found.');
         return;
       }
 
-      // this.logger.debug(`Sending reply with ${activeCount} active products`);
       await ctx.reply(
         '🧾 Record Payment\n\nSelect a product from the list below:',
         {
@@ -132,21 +96,15 @@ export class RecordPaymentCommand extends BaseCommand {
         },
       );
     } catch (error) {
-      this.logger.error('Error in record payment command:', {
-        error: error.message,
-        stack: error.stack,
-        config:
-          this.sheetsService.GSHEET_CONFIGS?.sales_tracking ||
-          'Config not available',
-      });
-      await ctx.reply(`Error: $${error}`);
+      this.logger.error('Error in record payment command:', error);
+      await ctx.reply('An error occurred while fetching products.');
     }
   }
 
-  async handleProductSelection(ctx: Context): Promise<void> {
+  async handleCallback(ctx: Context): Promise<void> {
     try {
       const callbackData = ctx.callbackQuery?.data;
-      if (!callbackData?.startsWith('payment_prod:')) return;
+      if (!callbackData?.startsWith('record_payment_callback:')) return;
 
       const productId = callbackData.split(':')[1];
       const product = this.productCache[productId];
@@ -165,7 +123,6 @@ export class RecordPaymentCommand extends BaseCommand {
           "Type 'cancel' to abort the operation.",
       );
 
-      // Store the context for payment amount handling
       this.productCache[productId].expectingAmount = true;
     } catch (error) {
       this.logger.error('Error handling product selection:', error);
@@ -175,12 +132,11 @@ export class RecordPaymentCommand extends BaseCommand {
     }
   }
 
-  async handlePaymentAmount(ctx: Context): Promise<void> {
+  async handleMessage(ctx: Context): Promise<void> {
     try {
       const text = ctx.message?.text?.trim().toLowerCase();
       if (!text) return;
 
-      // Find the product expecting payment
       const productId = Object.keys(this.productCache).find(
         (key) => this.productCache[key].expectingAmount,
       );

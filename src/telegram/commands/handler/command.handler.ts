@@ -1,26 +1,23 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Bot } from 'grammy';
+import { DiscoveryService } from '@nestjs/core';
+import { Bot, Context } from 'grammy';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { DiscoveryService, MetadataScanner } from '@nestjs/core';
-import { BaseCommand } from '../base.command';
 import {
   COMMAND_METADATA,
   CommandMetadata,
 } from 'src/common/decorators/command.decorator';
-import { RecordPaymentCommand } from '../record-payment.command';
+import { TelegramCommand } from 'src/app.types';
 import { RolesGuard } from 'src/common/guards/role.guard';
-import { Context } from 'grammy';
 
 @Injectable()
 export class CommandHandler implements OnModuleInit {
-  private commands = new Map<string, BaseCommand>();
+  private commands = new Map<string, TelegramCommand>();
   private isInitialized = false;
 
   constructor(
     @InjectPinoLogger(CommandHandler.name)
     private readonly logger: PinoLogger,
     private readonly discoveryService: DiscoveryService,
-    private readonly metadataScanner: MetadataScanner,
     private readonly rolesGuard: RolesGuard,
   ) {}
 
@@ -32,20 +29,12 @@ export class CommandHandler implements OnModuleInit {
   }
 
   private async discoverCommands() {
-    if (this.commands.size > 0) {
-      return;
-    }
-
     const wrappers = this.discoveryService.getProviders();
 
     wrappers.forEach((wrapper) => {
       const { instance } = wrapper;
 
-      if (
-        instance &&
-        Object.getPrototypeOf(instance) &&
-        instance instanceof BaseCommand
-      ) {
+      if (instance && instance.execute) {
         const metadata = Reflect.getMetadata(
           COMMAND_METADATA,
           instance.constructor,
@@ -59,15 +48,8 @@ export class CommandHandler implements OnModuleInit {
     });
   }
 
-  private async handleCommand(
-    command: BaseCommand,
-    metadata: CommandMetadata,
-    ctx: Context,
-  ) {
+  private async handleCommand(command: TelegramCommand, ctx: Context) {
     try {
-      this.logger.debug('Checking roles before executing command');
-
-      // Create an execution context
       const executionContext = {
         getClass: () => command.constructor,
         getHandler: () => command.execute,
@@ -77,29 +59,15 @@ export class CommandHandler implements OnModuleInit {
         switchToHttp: () => ({ getRequest: () => ctx }),
       };
 
-      // Check if the user has permission
       const canActivate = await this.rolesGuard.canActivate(
         executionContext as any,
       );
-
-      this.logger.debug('Role check result:', {
-        canActivate,
-        userId: ctx.from?.id,
-        command: metadata.name,
-      });
 
       if (!canActivate) {
         await ctx.reply('❌ You do not have permission to use this command.');
         return;
       }
 
-      const text = ctx.message?.text?.trim();
-      if (text === `/${metadata.name} help` && metadata.usage) {
-        await ctx.reply(metadata.usage);
-        return;
-      }
-
-      this.logger.debug(`Executing ${metadata.name} command handler`);
       await command.execute(ctx);
     } catch (error) {
       this.logger.error('Error executing command:', error);
@@ -113,52 +81,26 @@ export class CommandHandler implements OnModuleInit {
       this.isInitialized = true;
     }
 
-    if (this.commands.size === 0) {
-      this.logger.warn('No commands available for registration');
-      return;
-    }
-
-    this.logger.debug(`Registering ${this.commands.size} commands`);
-
     // Register command handlers
     this.commands.forEach((command, name) => {
-      this.logger.debug(`Registering command: ${name}`);
-      const metadata = Reflect.getMetadata(
-        COMMAND_METADATA,
-        command.constructor,
-      ) as CommandMetadata;
-
-      bot.command(name, async (ctx) => {
-        try {
-          this.logger.debug(`Executing command: ${name}`);
-          await this.handleCommand(command, metadata, ctx);
-        } catch (error) {
-          this.logger.error(`Error executing command ${name}:`, error);
-          await ctx.reply('An error occurred while executing the command.');
-        }
-      });
+      bot.command(name, (ctx) => this.handleCommand(command, ctx));
     });
 
-    // Register callback query handlers for payment product selection
+    // Register callback query handlers
     bot.on('callback_query:data', async (ctx) => {
-      const callbackData = ctx.callbackQuery.data;
-      if (callbackData?.startsWith('payment_prod:')) {
-        const recordPaymentCommand = this.commands.get(
-          'record_payment',
-        ) as RecordPaymentCommand;
-        if (recordPaymentCommand) {
-          await recordPaymentCommand.handleProductSelection(ctx);
+      for (const command of this.commands.values()) {
+        if (command.handleCallback) {
+          await command.handleCallback(ctx);
         }
       }
     });
 
-    // Register unknown command handler
+    // Register message handlers
     bot.on('message:text', async (ctx) => {
-      const recordPaymentCommand = this.commands.get(
-        'record_payment',
-      ) as RecordPaymentCommand;
-      if (recordPaymentCommand) {
-        await recordPaymentCommand.handlePaymentAmount(ctx);
+      for (const command of this.commands.values()) {
+        if (command.handleMessage) {
+          await command.handleMessage(ctx);
+        }
       }
     });
   }

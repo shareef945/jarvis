@@ -15,19 +15,20 @@ interface PropertyCache {
     expectingAmount?: boolean;
   };
 }
+
 @Injectable()
 @Command({
-  name: 'record_maintenance_cost',
-  description: 'record maintenance cost for sai-real estate',
-  usage: 'Usage: /record_maintenance_cost',
+  name: 'record_capex',
+  description: 'Record capital expenditure for a property',
+  usage: 'Usage: /record_capex',
 })
 @UseGuards(RolesGuard)
 @Roles('admin')
-export class RecordMaintenanceCostCommand extends BaseCommand {
+export class RecordCapexCommand extends BaseCommand {
   private propertyCache: PropertyCache = {};
 
   constructor(
-    @InjectPinoLogger(RecordMaintenanceCostCommand.name)
+    @InjectPinoLogger(RecordCapexCommand.name)
     protected readonly logger: PinoLogger,
     private readonly sheetsService: GoogleSheetsService,
   ) {
@@ -36,7 +37,7 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
 
   async execute(ctx: Context): Promise<void> {
     try {
-      const config = this.sheetsService.GSHEET_CONFIGS.maintenance_cost;
+      const config = this.sheetsService.GSHEET_CONFIGS.capex;
       const range = `${config.property_data.worksheet_name}!${config.property_data.range}`;
       const rows = await this.sheetsService.getValues(
         config.workbook_id,
@@ -44,7 +45,6 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
       );
 
       if (!rows || rows.length === 0) {
-        this.logger.debug('No rows returned from spreadsheet');
         await ctx.reply('❌ No properties found in the sheet.');
         return;
       }
@@ -60,13 +60,7 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
           const propertyId = row[config.property_data.columns.unique_id];
           const propertyName = row[config.property_data.columns.property_name];
 
-          if (!propertyId || !propertyName) {
-            this.logger.warn('Skipping row due to missing required fields', {
-              propertyId,
-              propertyName,
-            });
-            continue;
-          }
+          if (!propertyId || !propertyName) continue;
 
           this.propertyCache[propertyId] = {
             propertyId,
@@ -76,7 +70,7 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
           keyboard
             .text(
               `📦 ${propertyId} | ${propertyName}`,
-              `record_maintenance_cost_callback:${propertyId}`,
+              `record_capex_callback:${propertyId}`,
             )
             .row();
 
@@ -85,19 +79,18 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
       }
 
       if (activeCount === 0) {
-        this.logger.debug('No properties found');
-        await ctx.reply('❌ No properties found');
+        await ctx.reply('❌ No active properties found.');
         return;
       }
 
       await ctx.reply(
-        '🧾 Record Maintenance Cost\n\nSelect a property from the list below:',
+        '💰 Record Capex\n\nSelect a property from the list below:',
         {
           reply_markup: keyboard,
         },
       );
     } catch (error) {
-      this.logger.error('Error in maintenance cost command:', error);
+      this.logger.error('Error in capex command:', error);
       await ctx.reply('An error occurred while fetching properties.');
     }
   }
@@ -105,8 +98,7 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
   async handleCallback(ctx: Context): Promise<void> {
     try {
       const callbackData = ctx.callbackQuery?.data;
-      if (!callbackData?.startsWith('record_maintenance_cost_callback:'))
-        return;
+      if (!callbackData?.startsWith('record_capex_callback:')) return;
 
       const propertyId = callbackData.split(':')[1];
       const property = this.propertyCache[propertyId];
@@ -117,7 +109,7 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
       }
 
       await ctx.reply(
-        '🧾 Record Maintenance Cost\n\n' +
+        '💰 Record Capex\n\n' +
           `Property: ${property.propertyName}\n` +
           `Property ID: ${property.propertyId}\n\n` +
           'Enter amount \n' +
@@ -147,7 +139,7 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
       if (['cancel', '/cancel', 'abort', '/abort'].includes(text)) {
         delete this.propertyCache[propertyId];
         await ctx.reply(
-          '❌ Recording cancelled. Use /record_maintenance_cost to start over.',
+          '❌ Recording cancelled. Use /record_capex to start over.',
         );
         return;
       }
@@ -161,18 +153,15 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
         return;
       }
 
-      const payment = await this.sheetsService.recordPayment(
-        propertyId,
-        amount,
-      );
+      const payment = await this.sheetsService.recordCapex(propertyId, amount);
       delete this.propertyCache[propertyId];
 
       await ctx.reply(
-        `✅ Maintenance cost recorded successfully!\n\n` +
+        `✅ Capex recorded successfully!\n\n` +
           `📦 Property: ${payment.productId}\n` +
           `💰 Amount: ${payment.amount}\n` +
           `📅 Date: ${payment.date}\n` +
-          `Use /record_maintenance_cost to record another cost`,
+          `Use /record_capex to record another expense`,
       );
     } catch (error) {
       this.logger.error('Error handling amount:', error);

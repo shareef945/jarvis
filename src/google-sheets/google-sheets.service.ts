@@ -43,7 +43,27 @@ export class GoogleSheetsService {
     maintenance_cost: {
       workbook_id: this.appConfig.google.sheets.realEstate.workbookId,
       worksheet_name: this.appConfig.google.sheets.realEstate.maintSheet,
-      product_data: {
+      property_data: {
+        worksheet_name: this.appConfig.google.sheets.realEstate.propertyInfo,
+        range: 'A2:P',
+        columns: {
+          unique_id: 2,
+          property_name: 6,
+        },
+      },
+      columns: {
+        date: 0,
+        unique_id: 1,
+        property_name: 2,
+        category: 3,
+        description: 4,
+        amount: 6,
+      },
+    },
+    capex: {
+      workbook_id: this.appConfig.google.sheets.realEstate.workbookId,
+      worksheet_name: this.appConfig.google.sheets.realEstate.capexSheet,
+      property_data: {
         worksheet_name: this.appConfig.google.sheets.realEstate.propertyInfo,
         range: 'A2:P',
         columns: {
@@ -231,5 +251,41 @@ export class GoogleSheetsService {
   async calculateDaysLate(): Promise<number> {
     // Implement your days late calculation logic here
     return 0; // Placeholder
+  }
+
+  async recordCapex(propertyId: string, amount: number) {
+    try {
+      const config = this.GSHEET_CONFIGS.capex;
+      const today = new Date().toISOString().split('T')[0];
+
+      const rowData = Array(
+        Math.max(...Object.values(config.columns)) + 1,
+      ).fill('');
+      rowData[config.columns.date] = today;
+      rowData[config.columns.unique_id] = propertyId;
+      rowData[config.columns.amount] = amount.toString();
+
+      await this.sheets.spreadsheets.values.append({
+        spreadsheetId: config.workbook_id,
+        range: config.worksheet_name,
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+          values: [rowData],
+        },
+      });
+
+      this.logger.info(
+        `Capex recorded successfully for ${propertyId} - GHS ${amount.toString()}`,
+      );
+
+      return {
+        productId: propertyId,
+        amount,
+        date: today,
+      };
+    } catch (error) {
+      this.logger.error('Error recording capex:', error);
+      throw error;
+    }
   }
 }
