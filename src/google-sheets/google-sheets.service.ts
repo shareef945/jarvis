@@ -191,6 +191,43 @@ export class GoogleSheetsService {
     }
   }
 
+  async recordMaintenanceCost(propertyId: string, amount: number) {
+    try {
+      const config = this.GSHEET_CONFIGS.maintenance_cost;
+      const today = new Date().toISOString().split('T')[0];
+      const daysLate = await this.calculateDaysLate();
+
+      const rowData = Array(
+        Math.max(...Object.values(config.columns)) + 1,
+      ).fill('');
+      rowData[config.columns.date] = today;
+      rowData[config.columns.unique_id] = propertyId;
+      rowData[config.columns.amount] = amount.toString();
+      // rowData[config.columns.days_late] = daysLate.toString();
+
+      await this.sheets.spreadsheets.values.append({
+        spreadsheetId: config.workbook_id,
+        range: config.worksheet_name,
+        valueInputOption: 'USER_ENTERED',
+        resource: {
+          values: [rowData],
+        },
+      });
+      this.logger.info(
+        `Payment recorded successfully for ${propertyId} - GHS ${amount.toString()}`,
+      );
+      return {
+        propertyId,
+        amount,
+        date: today,
+        daysLate,
+      };
+    } catch (error) {
+      this.logger.error('Error recording payment:', error);
+      throw error;
+    }
+  }
+
   async calculateDaysLate(): Promise<number> {
     // Implement your days late calculation logic here
     return 0; // Placeholder

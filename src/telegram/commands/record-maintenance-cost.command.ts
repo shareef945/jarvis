@@ -12,29 +12,28 @@ import { InlineKeyboard } from 'grammy';
 import { RolesGuard } from 'src/common/guards/role.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
-interface ProductCache {
+interface PropertyCache {
   [key: string]: {
-    productId: string;
-    customerName: string;
-    weeklyInstallment: string;
+    propertyId: string;
+    propertyName: string;
     expectingAmount?: boolean;
   };
 }
 
 @Injectable()
 @Command({
-  name: 'record_payment',
-  description: 'Record a payment for a product',
-  usage: 'Usage: /record_payment',
+  name: 'record_maintenance_cost',
+  description: 'record maintenance cost for sai-real estate',
+  usage: 'Usage: /record_maintenance_cost',
 })
 @UseGuards(RolesGuard)
 @Roles('admin')
-export class RecordPaymentCommand extends BaseCommand {
+export class RecordMaintenanceCostCommand extends BaseCommand {
   private readonly metadata: CommandMetadata;
-  private productCache: ProductCache = {};
+  private propertyCache: PropertyCache = {};
 
   constructor(
-    @InjectPinoLogger(RecordPaymentCommand.name)
+    @InjectPinoLogger(RecordMaintenanceCostCommand.name)
     protected readonly logger: PinoLogger,
     private readonly sheetsService: GoogleSheetsService,
   ) {
@@ -44,7 +43,7 @@ export class RecordPaymentCommand extends BaseCommand {
 
   async execute(ctx: Context): Promise<void> {
     try {
-      const config = this.sheetsService.GSHEET_CONFIGS.sales_tracking;
+      const config = this.sheetsService.GSHEET_CONFIGS.maintenance_cost;
       // this.logger.debug(
       //   `Attempting to fetch data with config: ${JSON.stringify(config)}`,
       // );
@@ -69,7 +68,7 @@ export class RecordPaymentCommand extends BaseCommand {
       let activeCount = 0;
 
       // Clear previous cache
-      this.productCache = {};
+      this.propertyCache = {};
 
       // this.logger.debug(`Processing ${rows.length} rows from spreadsheet`);
 
@@ -83,35 +82,26 @@ export class RecordPaymentCommand extends BaseCommand {
             break;
           }
 
-          const productId = row[config.product_data.columns.product_id];
-          const customerName = row[config.product_data.columns.customer_name];
-          const weeklyInstallment =
-            row[config.product_data.columns.weekly_installment];
+          const propertyId = row[config.product_data.columns.unique_id];
+          const propertyName = row[config.product_data.columns.property_name];
 
           // Validate required fields
-          if (!productId || !customerName || !weeklyInstallment) {
+          if (!propertyId || !propertyName) {
             this.logger.warn('Skipping row due to missing required fields', {
-              productId,
-              customerName,
-              weeklyInstallment,
+              propertyId,
+              propertyName,
             });
             continue;
           }
 
           // Cache the product details
-          this.productCache[productId] = {
-            productId,
-            customerName,
-            weeklyInstallment,
+          this.propertyCache[propertyId] = {
+            propertyId,
+            propertyName,
           };
 
           // Add button to keyboard
-          keyboard
-            .text(
-              `📦 ${productId} | ${customerName}\n💰 Weekly: ${weeklyInstallment}`,
-              `payment_prod:${productId}`,
-            )
-            .row();
+          keyboard.text(`📦 ${propertyId} | ${propertyName}`).row();
 
           activeCount++;
           // this.logger.debug(`Added product to keyboard: ${productId}`);
@@ -148,25 +138,24 @@ export class RecordPaymentCommand extends BaseCommand {
       const callbackData = ctx.callbackQuery?.data;
       if (!callbackData?.startsWith('payment_prod:')) return;
 
-      const productId = callbackData.split(':')[1];
-      const product = this.productCache[productId];
+      const propertyId = callbackData.split(':')[1];
+      const property = this.propertyCache[propertyId];
 
-      if (!product) {
+      if (!property) {
         await ctx.reply('❌ Product details not found. Please try again.');
         return;
       }
 
       await ctx.reply(
-        '🧾 Record Payment\n\n' +
-          `Customer: ${product.customerName}\n` +
-          `Product ID: ${product.productId}\n` +
-          `Weekly Installment: ${product.weeklyInstallment}\n\n` +
+        '🧾 Record Maintenance Cost\n\n' +
+          `Property: ${property.propertyName}\n` +
+          `Property ID: ${property.propertyId}\n` +
           'Enter amount \n' +
           "Type 'cancel' to abort the operation.",
       );
 
       // Store the context for payment amount handling
-      this.productCache[productId].expectingAmount = true;
+      this.propertyCache[propertyId].expectingAmount = true;
     } catch (error) {
       this.logger.error('Error handling product selection:', error);
       await ctx.reply(
@@ -181,16 +170,16 @@ export class RecordPaymentCommand extends BaseCommand {
       if (!text) return;
 
       // Find the product expecting payment
-      const productId = Object.keys(this.productCache).find(
-        (key) => this.productCache[key].expectingAmount,
+      const propertyId = Object.keys(this.propertyCache).find(
+        (key) => this.propertyCache[key].expectingAmount,
       );
 
-      if (!productId) return;
+      if (!propertyId) return;
 
       if (['cancel', '/cancel', 'abort', '/abort'].includes(text)) {
-        delete this.productCache[productId];
+        delete this.propertyCache[propertyId];
         await ctx.reply(
-          '❌ Payment recording cancelled. Use /record_payment to start over.',
+          '❌ Payment recording cancelled. Use /record_maintenance_cost to start over.',
         );
         return;
       }
@@ -204,16 +193,19 @@ export class RecordPaymentCommand extends BaseCommand {
         return;
       }
 
-      const payment = await this.sheetsService.recordPayment(productId, amount);
-      delete this.productCache[productId];
+      const payment = await this.sheetsService.recordPayment(
+        propertyId,
+        amount,
+      );
+      delete this.propertyCache[propertyId];
 
       await ctx.reply(
-        `✅ Payment recorded successfully!\n\n` +
+        `✅ Cost recorded successfully!\n\n` +
           `📦 Product: ${payment.productId}\n` +
           `💰 Amount: ${payment.amount}\n` +
           `📅 Date: ${payment.date}\n` +
           `⏰ Days Late: ${payment.daysLate}\n\n` +
-          `Use /record_payment to record another payment`,
+          `Use /record_maintenance_cost to record another payment`,
       );
     } catch (error) {
       this.logger.error('Error handling payment amount:', error);
