@@ -11,9 +11,17 @@ import { FileManagerModule } from 'src/file-manager/file-manager.module';
 import { RolesGuard } from 'src/common/guards/role.guard';
 import { RecordMaintenanceCostCommand } from './commands/record-maintenance-cost.command';
 import { RecordCapexCommand } from './commands/record-capex.command';
+import { MobileMoneyCommand } from './commands/mobile-money.command';
+import { MobileMoneyModule } from 'src/mobile-money/mobile-money.module';
 
 @Module({
-  imports: [DiscoveryModule, GoogleSheetsModule, HttpModule, FileManagerModule],
+  imports: [
+    DiscoveryModule,
+    GoogleSheetsModule,
+    HttpModule,
+    FileManagerModule,
+    MobileMoneyModule,
+  ],
   providers: [
     TelegramService,
     CommandHandler,
@@ -23,6 +31,7 @@ import { RecordCapexCommand } from './commands/record-capex.command';
     RolesGuard,
     RecordMaintenanceCostCommand,
     RecordCapexCommand,
+    MobileMoneyCommand,
   ],
   exports: [TelegramService],
 })

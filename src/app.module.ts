@@ -7,6 +7,7 @@ import { FileManagerModule } from './file-manager/file-manager.module';
 import { ConfigModule } from '@nestjs/config';
 import { appConfig, validationSchema } from './app.config';
 import { LoggerModule } from './common/logger/logger.module';
+import { MobileMoneyModule } from './mobile-money/mobile-money.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { LoggerModule } from './common/logger/logger.module';
       load: [appConfig],
       validationSchema,
     }),
+    MobileMoneyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

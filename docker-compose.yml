@@ -9,8 +9,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - .:/usr/src/app/jarvis
-      - type: tmpfs
+      # - .:/usr/src/app/jarvis
+      # - type: tmpfs
       - service-account:/usr/src/app/credentials
 
     working_dir: /usr/src/app/jarvis

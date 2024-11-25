@@ -37,6 +37,7 @@ export const appConfig = registerAs('app', () => {
       apiHash: process.env.API_HASH,
       botToken: process.env.BOT_TOKEN,
     },
+    momo: { pin: process.env.MOMO_PIN },
     google: {
       serviceAccountPath: process.env.GOOGLE_SERVICE_ACCOUNT_PATH,
       sheets: {
@@ -85,4 +86,5 @@ export const validationSchema = Joi.object({
   REAL_ESTATE_WORKBOOK_CAPEX_SHEETNAME: Joi.string().required(),
   REAL_ESTATE_WORKBOOK_PROPERTY_INFO_SHEETNAME: Joi.string().required(),
   NODE_ENV: Joi.string().valid('dev', 'prod').default('dev'),
+  MOMO_PIN: Joi.string().required(),
 });
