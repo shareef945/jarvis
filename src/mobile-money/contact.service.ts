@@ -85,7 +85,7 @@ export class ContactService {
       this.retryCount = 0;
 
       const { stdout } = await execAsync(
-        'adb shell content query --uri content://contacts/data/phones --projection display_name:data1 --where "mimetype=\'vnd.android.cursor.item/phone_v2\'"',
+        'adb shell content query --uri content://com.android.contacts/data --projection raw_contact_id:display_name:data1 --where "mimetype=\'vnd.android.cursor.item/phone_v2\'"',
       );
 
       const newContacts = stdout
