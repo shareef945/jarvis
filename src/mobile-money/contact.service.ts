@@ -23,6 +23,10 @@ export class ContactService {
     @InjectPinoLogger(ContactService.name)
     private readonly logger: PinoLogger,
   ) {
+    this.startAdbServer().catch((error) => {
+      this.logger.error('Failed to start ADB server:', error);
+    });
+
     this.initializeContacts().catch((error) => {
       this.logger.warn(
         'Initial contact load failed, will retry on next request',
@@ -36,6 +40,17 @@ export class ContactService {
       await this.loadContacts();
     } catch (error) {
       this.logger.error('Failed to initialize contacts:', error);
+    }
+  }
+
+  private async startAdbServer(): Promise<void> {
+    try {
+      await execAsync('adb kill-server');
+      await execAsync('adb start-server');
+      this.logger.info('ADB server started successfully');
+    } catch (error) {
+      this.logger.error('Failed to start ADB server:', error);
+      throw error;
     }
   }
 

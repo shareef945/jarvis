@@ -10,6 +10,11 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y \
+android-tools-adb \
+android-tools-fastboot \
+&& rm -rf /var/lib/apt/lists/*
+
 RUN npm install -g pnpm @nestjs/cli
 COPY package.json pnpm-lock.yaml ./
 ENV PYTHON=/usr/bin/python3
