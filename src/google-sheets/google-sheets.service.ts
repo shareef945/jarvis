@@ -72,22 +72,17 @@ export class GoogleSheetsService {
         },
       },
       columns: {
-        date: 0,
-        unique_id: 1,
-        property_name: 2,
-        category: 3,
-        description: 4,
-        amount: 6,
+        date: 2,
+        unique_id: 0,
+        property_name: 1,
+        description: 5,
+        amount: 4,
       },
     },
   };
 
   async getValues(spreadsheetId: string, range: string) {
     try {
-      // this.logger.debug(
-      //   `Attempting to get values from spreadsheet: ${spreadsheetId}, range: ${range}`,
-      // );
-
       if (!this.sheets) {
         throw new Error('Google Sheets service not initialized');
       }
@@ -174,7 +169,7 @@ export class GoogleSheetsService {
     }
   }
 
-  async recordPayment(productId: string, amount: number) {
+  async recordWeeklySalesPayment(productId: string, amount: number) {
     try {
       const config = this.GSHEET_CONFIGS.sales_tracking;
       const today = new Date().toISOString().split('T')[0];
@@ -211,11 +206,16 @@ export class GoogleSheetsService {
     }
   }
 
-  async recordMaintenanceCost(propertyId: string, amount: number) {
+  async recordMaintenanceCost(
+    propertyId: string,
+    amount: number,
+    category: string,
+    description: string,
+    propertyName: string,
+  ) {
     try {
       const config = this.GSHEET_CONFIGS.maintenance_cost;
       const today = new Date().toISOString().split('T')[0];
-      const daysLate = await this.calculateDaysLate();
 
       const rowData = Array(
         Math.max(...Object.values(config.columns)) + 1,
@@ -223,7 +223,9 @@ export class GoogleSheetsService {
       rowData[config.columns.date] = today;
       rowData[config.columns.unique_id] = propertyId;
       rowData[config.columns.amount] = amount.toString();
-      // rowData[config.columns.days_late] = daysLate.toString();
+      rowData[config.columns.category] = category;
+      rowData[config.columns.description] = description;
+      rowData[config.columns.property_name] = propertyName;
 
       await this.sheets.spreadsheets.values.append({
         spreadsheetId: config.workbook_id,
@@ -240,7 +242,9 @@ export class GoogleSheetsService {
         propertyId,
         amount,
         date: today,
-        daysLate,
+        category,
+        description,
+        propertyName,
       };
     } catch (error) {
       this.logger.error('Error recording payment:', error);
@@ -253,7 +257,12 @@ export class GoogleSheetsService {
     return 0; // Placeholder
   }
 
-  async recordCapex(propertyId: string, amount: number) {
+  async recordCapex(
+    propertyId: string,
+    propertyName: string,
+    amount: number,
+    description: string,
+  ) {
     try {
       const config = this.GSHEET_CONFIGS.capex;
       const today = new Date().toISOString().split('T')[0];
@@ -261,9 +270,12 @@ export class GoogleSheetsService {
       const rowData = Array(
         Math.max(...Object.values(config.columns)) + 1,
       ).fill('');
+
       rowData[config.columns.date] = today;
       rowData[config.columns.unique_id] = propertyId;
       rowData[config.columns.amount] = amount.toString();
+      rowData[config.columns.description] = description;
+      rowData[config.columns.property_name] = propertyName;
 
       await this.sheets.spreadsheets.values.append({
         spreadsheetId: config.workbook_id,
@@ -278,13 +290,25 @@ export class GoogleSheetsService {
         `Capex recorded successfully for ${propertyId} - GHS ${amount.toString()}`,
       );
 
-      return {
-        productId: propertyId,
+      const result = {
+        propertyId,
+        propertyName,
+        description,
         amount,
         date: today,
       };
+
+      this.logger.debug('Returning result:', result);
+      return result;
     } catch (error) {
-      this.logger.error('Error recording capex:', error);
+      this.logger.error('Error recording capex:', {
+        error: error.message,
+        stack: error.stack,
+        propertyId,
+        propertyName,
+        amount,
+        description,
+      });
       throw error;
     }
   }

@@ -12,7 +12,9 @@ interface PropertyCache {
   [key: string]: {
     propertyId: string;
     propertyName: string;
-    expectingAmount?: boolean;
+    amount?: number;
+    description?: string;
+    isActive?: boolean;
   };
 }
 
@@ -43,44 +45,31 @@ export class RecordCapexCommand extends BaseCommand {
         config.workbook_id,
         range,
       );
-
       if (!rows || rows.length === 0) {
         await ctx.reply('❌ No properties found in the sheet.');
         return;
       }
 
       const keyboard = new InlineKeyboard();
-      let activeCount = 0;
       this.propertyCache = {};
 
       for (const row of rows) {
-        if (row.length >= 15 && row[15]?.toUpperCase() === 'TRUE') {
-          if (activeCount >= 10) break;
+        const propertyId = row[config.property_data.columns.unique_id];
+        const propertyName = row[config.property_data.columns.property_name];
 
-          const propertyId = row[config.property_data.columns.unique_id];
-          const propertyName = row[config.property_data.columns.property_name];
+        if (!propertyId || !propertyName) continue;
 
-          if (!propertyId || !propertyName) continue;
+        this.propertyCache[propertyId] = {
+          propertyId,
+          propertyName,
+        };
 
-          this.propertyCache[propertyId] = {
-            propertyId,
-            propertyName,
-          };
-
-          keyboard
-            .text(
-              `📦 ${propertyId} | ${propertyName}`,
-              `record_capex_callback:${propertyId}`,
-            )
-            .row();
-
-          activeCount++;
-        }
-      }
-
-      if (activeCount === 0) {
-        await ctx.reply('❌ No active properties found.');
-        return;
+        keyboard
+          .text(
+            `📦 ${propertyId} | ${propertyName}`,
+            `record_capex_callback:${propertyId}`,
+          )
+          .row();
       }
 
       await ctx.reply(
@@ -94,7 +83,6 @@ export class RecordCapexCommand extends BaseCommand {
       await ctx.reply('An error occurred while fetching properties.');
     }
   }
-
   async handleCallback(ctx: Context): Promise<void> {
     try {
       const callbackData = ctx.callbackQuery?.data;
@@ -108,15 +96,21 @@ export class RecordCapexCommand extends BaseCommand {
         return;
       }
 
+      // Reset all properties to inactive
+      Object.keys(this.propertyCache).forEach((key) => {
+        this.propertyCache[key].isActive = false;
+      });
+
+      // Mark this property as active
+      property.isActive = true;
+
       await ctx.reply(
         '💰 Record Capex\n\n' +
           `Property: ${property.propertyName}\n` +
           `Property ID: ${property.propertyId}\n\n` +
-          'Enter amount \n' +
+          'Enter amount:\n' +
           "Type 'cancel' to abort the operation.",
       );
-
-      this.propertyCache[propertyId].expectingAmount = true;
     } catch (error) {
       this.logger.error('Error handling property selection:', error);
       await ctx.reply(
@@ -127,16 +121,19 @@ export class RecordCapexCommand extends BaseCommand {
 
   async handleMessage(ctx: Context): Promise<void> {
     try {
-      const text = ctx.message?.text?.trim().toLowerCase();
+      const text = ctx.message?.text?.trim();
       if (!text) return;
 
+      // Find the active property instead of any property without description
       const propertyId = Object.keys(this.propertyCache).find(
-        (key) => this.propertyCache[key].expectingAmount,
+        (key) => this.propertyCache[key].isActive,
       );
 
       if (!propertyId) return;
 
-      if (['cancel', '/cancel', 'abort', '/abort'].includes(text)) {
+      if (
+        ['cancel', '/cancel', 'abort', '/abort'].includes(text.toLowerCase())
+      ) {
         delete this.propertyCache[propertyId];
         await ctx.reply(
           '❌ Recording cancelled. Use /record_capex to start over.',
@@ -144,27 +141,52 @@ export class RecordCapexCommand extends BaseCommand {
         return;
       }
 
-      const amount = parseFloat(text);
-      if (isNaN(amount)) {
+      const property = this.propertyCache[propertyId];
+
+      if (!property.amount) {
+        const amount = parseFloat(text);
+        if (isNaN(amount)) {
+          await ctx.reply(
+            '❌ Please enter a valid number (e.g., 500)\n\n' +
+              "Type 'cancel' to abort the operation, or try again with a valid number.",
+          );
+          return;
+        }
+
+        property.amount = amount;
         await ctx.reply(
-          '❌ Please enter a valid number (e.g., 500)\n\n' +
-            "Type 'cancel' to abort the operation, or try again with a valid number.",
+          '📝 Please enter a description for this expense:\n\n' +
+            "Type 'cancel' to abort the operation.",
         );
         return;
       }
 
-      const payment = await this.sheetsService.recordCapex(propertyId, amount);
-      delete this.propertyCache[propertyId];
+      if (property.amount && !property.description) {
+        property.description = text;
 
-      await ctx.reply(
-        `✅ Capex recorded successfully!\n\n` +
-          `📦 Property: ${payment.productId}\n` +
-          `💰 Amount: ${payment.amount}\n` +
-          `📅 Date: ${payment.date}\n` +
-          `Use /record_capex to record another expense`,
-      );
+        const payment = await this.sheetsService.recordCapex(
+          property.propertyId,
+          property.propertyName,
+          property.amount,
+          property.description,
+        );
+
+        delete this.propertyCache[propertyId];
+
+        await ctx.reply(
+          `✅ Capex recorded successfully!\n\n` +
+            `📦 Property: ${payment.propertyName}\n` +
+            `💰 Amount: ${payment.amount}\n` +
+            `📝 Description: ${payment.description}\n` +
+            `📅 Date: ${payment.date}\n` +
+            `Use /record_capex to record another expense`,
+        );
+      }
     } catch (error) {
-      this.logger.error('Error handling amount:', error);
+      this.logger.error('Error handling input:', error);
+      if (error.stack) {
+        this.logger.error('Stack trace:', error.stack);
+      }
       await ctx.reply(
         'Sorry, something went wrong while processing your input.',
       );

@@ -103,20 +103,48 @@ export class ContactService {
         'adb shell content query --uri content://com.android.contacts/data --projection raw_contact_id:display_name:data1 --where "mimetype=\'vnd.android.cursor.item/phone_v2\'"',
       );
 
+      // Add debug logging for raw output
+      this.logger.debug('Raw contact data:', stdout);
+
       const newContacts = stdout
         .split('\n')
         .filter((line) => line.trim())
         .map((line) => {
+          this.logger.debug('Processing line:', line);
+
+          // Updated regex patterns to match the actual format
           const nameMatch = line.match(/display_name=([^,]+)/);
-          const phoneMatch = line.match(/data1=([^,]+)/);
+          const phoneMatch = line.match(/data1=([^,\n]+)/);
 
-          if (!nameMatch || !phoneMatch) return null;
+          if (!nameMatch || !phoneMatch) {
+            this.logger.debug('Failed to match line:', {
+              nameMatch,
+              phoneMatch,
+            });
+            return null;
+          }
 
-          return {
+          // Filter out system contacts and spam
+          const name = nameMatch[1].trim();
+          if (
+            name === 'SPAM' ||
+            name === 'Voice Mail' ||
+            name === 'Fast Balance' ||
+            name === 'Fast Refill' ||
+            name === 'SNAP Talkback' ||
+            name === 'Apple Inc.'
+          ) {
+            return null;
+          }
+
+          const contact = {
             id: Math.random().toString(36).substr(2, 9),
-            name: nameMatch[1].trim(),
-            phoneNumber: phoneMatch[1].trim().replace(/[^\d+]/g, ''),
+            name: name,
+            phoneNumber: phoneMatch[1].trim().replace(/\s+/g, ''),
           };
+
+          this.logger.debug('Parsed contact:', contact);
+          return contact;
         })
         .filter((contact): contact is Contact => contact !== null);
 
@@ -128,6 +156,14 @@ export class ContactService {
         );
       } else {
         this.logger.warn('No contacts found in device');
+        this.logger.debug(
+          'Contact parsing resulted in zero contacts. Raw data length:',
+          stdout.length,
+        );
+        this.logger.debug(
+          'First few lines of raw data:',
+          stdout.split('\n').slice(0, 3),
+        );
       }
     } catch (error) {
       this.logger.error('Failed to load contacts:', error);

@@ -13,8 +13,22 @@ interface PropertyCache {
     propertyId: string;
     propertyName: string;
     expectingAmount?: boolean;
+    amount?: number;
+    expectingCategory?: boolean;
+    category?: string;
+    expectingDescription?: boolean;
   };
 }
+
+const MAINTENANCE_CATEGORIES = [
+  'Wi-Fi',
+  'Electricity',
+  'General Repairs',
+  'Cleaning',
+  'Misc',
+  'Mohammed',
+];
+
 @Injectable()
 @Command({
   name: 'record_maintenance_cost',
@@ -50,44 +64,31 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
       }
 
       const keyboard = new InlineKeyboard();
-      let activeCount = 0;
       this.propertyCache = {};
 
       for (const row of rows) {
-        if (row.length >= 15 && row[15]?.toUpperCase() === 'TRUE') {
-          if (activeCount >= 10) break;
+        const propertyId = row[config.property_data.columns.unique_id];
+        const propertyName = row[config.property_data.columns.property_name];
 
-          const propertyId = row[config.property_data.columns.unique_id];
-          const propertyName = row[config.property_data.columns.property_name];
-
-          if (!propertyId || !propertyName) {
-            this.logger.warn('Skipping row due to missing required fields', {
-              propertyId,
-              propertyName,
-            });
-            continue;
-          }
-
-          this.propertyCache[propertyId] = {
+        if (!propertyId || !propertyName) {
+          this.logger.warn('Skipping row due to missing required fields', {
             propertyId,
             propertyName,
-          };
-
-          keyboard
-            .text(
-              `📦 ${propertyId} | ${propertyName}`,
-              `record_maintenance_cost_callback:${propertyId}`,
-            )
-            .row();
-
-          activeCount++;
+          });
+          continue;
         }
-      }
 
-      if (activeCount === 0) {
-        this.logger.debug('No properties found');
-        await ctx.reply('❌ No properties found');
-        return;
+        this.propertyCache[propertyId] = {
+          propertyId,
+          propertyName,
+        };
+
+        keyboard
+          .text(
+            `📦 ${propertyId} | ${propertyName}`,
+            `record_maintenance_cost_callback:${propertyId}`,
+          )
+          .row();
       }
 
       await ctx.reply(
@@ -105,28 +106,47 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
   async handleCallback(ctx: Context): Promise<void> {
     try {
       const callbackData = ctx.callbackQuery?.data;
-      if (!callbackData?.startsWith('record_maintenance_cost_callback:'))
-        return;
+      if (!callbackData) return;
 
-      const propertyId = callbackData.split(':')[1];
-      const property = this.propertyCache[propertyId];
+      if (callbackData.startsWith('record_maintenance_cost_callback:')) {
+        const propertyId = callbackData.split(':')[1];
+        const property = this.propertyCache[propertyId];
 
-      if (!property) {
-        await ctx.reply('❌ Property details not found. Please try again.');
-        return;
+        if (!property) {
+          await ctx.reply('❌ Property details not found. Please try again.');
+          return;
+        }
+
+        await ctx.reply(
+          '🧾 Record Maintenance Cost\n\n' +
+            `Property: ${property.propertyName}\n` +
+            `Property ID: ${property.propertyId}\n\n` +
+            'Enter amount \n' +
+            "Type 'cancel' to abort the operation.",
+        );
+
+        this.propertyCache[propertyId].expectingAmount = true;
+      } else if (callbackData.startsWith('maintenance_category:')) {
+        const [, propertyId, category] = callbackData.split(':');
+        const property = this.propertyCache[propertyId];
+
+        if (!property) {
+          await ctx.reply('❌ Property details not found. Please try again.');
+          return;
+        }
+
+        property.category = category;
+        property.expectingCategory = false;
+        property.expectingDescription = true;
+
+        await ctx.reply(
+          `Category selected: ${category}\n\n` +
+            'Enter description of the maintenance work\n' +
+            "Type 'cancel' to abort the operation.",
+        );
       }
-
-      await ctx.reply(
-        '🧾 Record Maintenance Cost\n\n' +
-          `Property: ${property.propertyName}\n` +
-          `Property ID: ${property.propertyId}\n\n` +
-          'Enter amount \n' +
-          "Type 'cancel' to abort the operation.",
-      );
-
-      this.propertyCache[propertyId].expectingAmount = true;
     } catch (error) {
-      this.logger.error('Error handling property selection:', error);
+      this.logger.error('Error handling callback:', error);
       await ctx.reply(
         'Sorry, something went wrong while processing your selection.',
       );
@@ -135,16 +155,22 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
 
   async handleMessage(ctx: Context): Promise<void> {
     try {
-      const text = ctx.message?.text?.trim().toLowerCase();
+      const text = ctx.message?.text?.trim();
       if (!text) return;
 
       const propertyId = Object.keys(this.propertyCache).find(
-        (key) => this.propertyCache[key].expectingAmount,
+        (key) =>
+          this.propertyCache[key].expectingAmount ||
+          this.propertyCache[key].expectingCategory ||
+          this.propertyCache[key].expectingDescription,
       );
 
       if (!propertyId) return;
+      const property = this.propertyCache[propertyId];
 
-      if (['cancel', '/cancel', 'abort', '/abort'].includes(text)) {
+      if (
+        ['cancel', '/cancel', 'abort', '/abort'].includes(text.toLowerCase())
+      ) {
         delete this.propertyCache[propertyId];
         await ctx.reply(
           '❌ Recording cancelled. Use /record_maintenance_cost to start over.',
@@ -152,30 +178,58 @@ export class RecordMaintenanceCostCommand extends BaseCommand {
         return;
       }
 
-      const amount = parseFloat(text);
-      if (isNaN(amount)) {
-        await ctx.reply(
-          '❌ Please enter a valid number (e.g., 500)\n\n' +
-            "Type 'cancel' to abort the operation, or try again with a valid number.",
-        );
+      // Handle amount input
+      if (property.expectingAmount) {
+        const amount = parseFloat(text);
+        if (isNaN(amount)) {
+          await ctx.reply(
+            '❌ Please enter a valid number (e.g., 500)\n\n' +
+              "Type 'cancel' to abort the operation, or try again with a valid number.",
+          );
+          return;
+        }
+
+        property.amount = amount;
+        property.expectingAmount = false;
+        property.expectingCategory = true;
+
+        // Create keyboard with category options
+        const keyboard = new InlineKeyboard();
+        MAINTENANCE_CATEGORIES.forEach((category) => {
+          keyboard
+            .text(category, `maintenance_category:${propertyId}:${category}`)
+            .row();
+        });
+
+        await ctx.reply('Select maintenance category:', {
+          reply_markup: keyboard,
+        });
         return;
       }
 
-      const payment = await this.sheetsService.recordPayment(
-        propertyId,
-        amount,
-      );
-      delete this.propertyCache[propertyId];
+      // Handle description input
+      if (property.expectingDescription) {
+        const payment = await this.sheetsService.recordMaintenanceCost(
+          propertyId,
+          property.amount!,
+          property.category!,
+          text, // description
+          property.propertyName,
+        );
+        delete this.propertyCache[propertyId];
 
-      await ctx.reply(
-        `✅ Maintenance cost recorded successfully!\n\n` +
-          `📦 Property: ${payment.productId}\n` +
-          `💰 Amount: ${payment.amount}\n` +
-          `📅 Date: ${payment.date}\n` +
-          `Use /record_maintenance_cost to record another cost`,
-      );
+        await ctx.reply(
+          `✅ Maintenance cost recorded successfully!\n\n` +
+            `📦 Property: ${payment.propertyName}\n` +
+            `💰 Amount: ${payment.amount}\n` +
+            `🏷️ Category: ${payment.category}\n` +
+            `📝 Description: ${payment.description}\n` +
+            `📅 Date: ${payment.date}\n` +
+            `Use /record_maintenance_cost to record another cost`,
+        );
+      }
     } catch (error) {
-      this.logger.error('Error handling amount:', error);
+      this.logger.error('Error handling input:', error);
       await ctx.reply(
         'Sorry, something went wrong while processing your input.',
       );

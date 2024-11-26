@@ -11,11 +11,6 @@ export const TELEGRAM_BOT_COMMANDS = [
     role: 'admin',
   },
   {
-    command: 'send_money',
-    description: 'send mobile money to a contact',
-    role: 'admin',
-  },
-  {
     command: 'record_maintenance_cost',
     description: 'record maintenance cost for sai-real estate',
     role: 'admin',
@@ -26,8 +21,8 @@ export const TELEGRAM_BOT_COMMANDS = [
     role: 'admin',
   },
   {
-    command: 'record_airbnb_revenue',
-    description: 'record airbnb revenue',
+    command: 'send_money',
+    description: 'send mobile money to a contact',
     role: 'admin',
   },
   {

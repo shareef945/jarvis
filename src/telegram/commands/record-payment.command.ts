@@ -160,7 +160,10 @@ export class RecordPaymentCommand extends BaseCommand {
         return;
       }
 
-      const payment = await this.sheetsService.recordPayment(productId, amount);
+      const payment = await this.sheetsService.recordWeeklySalesPayment(
+        productId,
+        amount,
+      );
       delete this.productCache[productId];
 
       await ctx.reply(
