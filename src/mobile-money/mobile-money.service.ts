@@ -45,21 +45,44 @@ export class MobileMoneyService {
 
   async sendMoney(amount: number, phoneNumber: string): Promise<void> {
     try {
-      // MTN Mobile Money USSD code format
-      const ussdCode = `*170*1*${phoneNumber}*${amount}#`;
-      await this.adbService.executeUssd(ussdCode);
-
-      // Wait for confirmation prompt
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      // Press 1 to confirm
-      await this.adbService.pressKey(8);
-
-      // Wait for PIN prompt
+      // Start USSD session with *171#
+      await this.adbService.executeUssd('*171#');
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Enter PIN (you'll need to implement secure PIN storage)
+      // Select option 3 for "Transfer Money"
+      await this.adbService.pressKey(51); // ASCII for '3'
+      await this.adbService.pressKey(66); // Enter key
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Select option 2 for "Other Networks"
+      await this.adbService.pressKey(50); // ASCII for '2'
+      await this.adbService.pressKey(66); // Enter key
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Enter phone number
+      await this.adbService.inputText(phoneNumber);
+      await this.adbService.pressKey(66); // Enter key
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Enter amount
+      await this.adbService.inputText(amount.toString());
+      await this.adbService.pressKey(66); // Enter key
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Enter reference (optional) - just press enter to skip
+      await this.adbService.pressKey(66); // Enter key
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Confirm transaction (usually 1)
+      await this.adbService.pressKey(49); // ASCII for '1'
+      await this.adbService.pressKey(66); // Enter key
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Enter PIN
       await this.adbService.inputText(this.appConfig.momo.pin);
+      await this.adbService.pressKey(66); // Enter key
+
+      this.logger.info('Mobile money transfer completed successfully');
     } catch (error) {
       this.logger.error('Failed to send money:', error);
       throw new Error('Failed to complete mobile money transaction');
