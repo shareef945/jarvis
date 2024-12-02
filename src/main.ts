@@ -15,34 +15,15 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
-  // Log all registered routes
-  const server = app.getHttpServer();
-  const router = server._events.request._router;
-
-  console.log('Registered Routes:');
-  router.stack.forEach((layer) => {
-    if (layer.route) {
-      const path = layer.route?.path;
-      const method = layer.route?.stack[0].method;
-      console.log(`${method.toUpperCase()} ${path}`);
-    }
-  });
-
   // Add debug logging
-  const port = parseInt(config.app.port) || 3001;
-  console.log(`Attempting to start server on port: ${port}`);
-  console.log('Environment variables:', {
-    configPort: config.app.port,
-    envPort: process.env.PORT,
-  });
+  const port = parseInt(config.app.port) || 3000;
 
   try {
-    await app.listen(port);
-    console.log(`Listening on ${await app.getUrl()}`);
-
-    console.log(`Application is running on port: ${port}`);
+    console.log('Initializing app...');
+    await app.listen(port, '0.0.0.0');
+    console.log(`Application started successfully on: ${await app.getUrl()}`);
   } catch (err) {
-    logger.error('Failed to start server:', err);
+    console.error('Error starting the application:', err);
     process.exit(1);
   }
 }

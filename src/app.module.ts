@@ -15,6 +15,7 @@ import { MobileMoneyModule } from './mobile-money/mobile-money.module';
       isGlobal: true,
       load: [appConfig],
       validationSchema,
+      cache: true,
     }),
     LoggerModule,
     MobileMoneyModule,
