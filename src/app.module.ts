@@ -8,6 +8,8 @@ import { ConfigModule } from '@nestjs/config';
 import { appConfig, validationSchema } from './app.config';
 import { LoggerModule } from './common/logger/logger.module';
 import { MobileMoneyModule } from './mobile-money/mobile-money.module';
+import { LlmModule } from './llm/llm.module';
+import { LlsService } from './llm/llm.service';
 
 @Module({
   imports: [
@@ -22,8 +24,9 @@ import { MobileMoneyModule } from './mobile-money/mobile-money.module';
     TelegramModule,
     GoogleSheetsModule,
     FileManagerModule,
+    LlmModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, LlsService],
 })
 export class AppModule {}
