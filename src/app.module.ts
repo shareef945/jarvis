@@ -11,16 +11,16 @@ import { MobileMoneyModule } from './mobile-money/mobile-money.module';
 
 @Module({
   imports: [
-    TelegramModule,
-    GoogleSheetsModule,
-    FileManagerModule,
-    LoggerModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],
       validationSchema,
     }),
+    LoggerModule,
     MobileMoneyModule,
+    TelegramModule,
+    GoogleSheetsModule,
+    FileManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

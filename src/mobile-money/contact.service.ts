@@ -76,6 +76,40 @@ export class ContactService {
     }
   }
 
+  private normalizePhoneNumber(
+    phone: string,
+    toLocal: boolean = false,
+  ): string {
+    const digitsOnly = phone.replace(/\D/g, '');
+
+    let msisdn: string;
+    if (digitsOnly.startsWith('233')) {
+      msisdn = digitsOnly;
+    } else if (digitsOnly.startsWith('0')) {
+      msisdn = `233${digitsOnly.substring(1)}`;
+    } else if (digitsOnly.startsWith('7') || digitsOnly.startsWith('1')) {
+      msisdn = `233${digitsOnly}`;
+    } else {
+      msisdn = digitsOnly;
+    }
+
+    if (toLocal && msisdn.startsWith('233')) {
+      return `0${msisdn.substring(3)}`;
+    }
+
+    return msisdn;
+  }
+
+  private phoneNumberMatches(
+    contactPhone: string,
+    searchPhone: string,
+  ): boolean {
+    const normalizedContact = this.normalizePhoneNumber(contactPhone);
+    const normalizedSearch = this.normalizePhoneNumber(searchPhone);
+
+    return normalizedContact === normalizedSearch;
+  }
+
   private async loadContacts() {
     try {
       const isAdbConnected = await this.checkAdbConnection();
@@ -122,6 +156,8 @@ export class ContactService {
           }
 
           const name = nameMatch[1].trim();
+          const phoneNumber = phoneMatch[1].trim().replace(/\s+/g, '');
+
           if (
             name === 'Apple Inc.' ||
             name === 'Petra Shortcode' ||
@@ -135,7 +171,7 @@ export class ContactService {
           const contact = {
             id: Math.random().toString(36).substr(2, 9),
             name: name,
-            phoneNumber: phoneMatch[1].trim().replace(/\s+/g, ''),
+            phoneNumber: this.normalizePhoneNumber(phoneNumber, true),
           };
 
           return contact;

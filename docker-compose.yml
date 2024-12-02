@@ -6,17 +6,24 @@ services:
     command: sh -c "pnpm run start:dev"
     devices:
       - "/dev/bus/usb:/dev/bus/usb"
+      - "/dev/android-device:/dev/android-device"
+      - "/dev/android:/dev/android"
+
     env_file:
       - .env
     ports:
       - "3000:3000"
     privileged: true
     volumes:
-      # - .:/usr/src/app/jarvis
+      - .:/usr/src/app/jarvis
       # - type: tmpfs
       - service-account:/usr/src/app/credentials
-
+      - /run/udev:/run/udev:ro
     working_dir: /usr/src/app/jarvis
+    environment:
+      - ANDROID_HOME=/usr/local/android-sdk
+      - PATH=/usr/local/android-sdk/platform-tools:$PATH
+
 
 volumes:
   service-account:
