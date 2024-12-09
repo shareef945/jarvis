@@ -1,7 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { AppConfig, InjectAppConfig } from '../app.config';
 import bigInt from 'big-integer';
 import { Api } from 'telegram';
@@ -9,11 +8,9 @@ import { Api } from 'telegram';
 @Injectable()
 export class MTProtoService {
   private client: TelegramClient;
+  private readonly logger = new Logger(MTProtoService.name);
 
-  constructor(
-    @InjectAppConfig() private readonly appConfig: AppConfig,
-    @InjectPinoLogger(MTProtoService.name) private readonly logger: PinoLogger,
-  ) {
+  constructor(@InjectAppConfig() private readonly appConfig: AppConfig) {
     this.initializeClient();
   }
 
@@ -30,7 +27,7 @@ export class MTProtoService {
       );
 
       await this.client.connect();
-      this.logger.info('Telegram MTProto client initialized successfully');
+      this.logger.log('Telegram MTProto client initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize Telegram client:', error);
       throw error;

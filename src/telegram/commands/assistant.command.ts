@@ -1,8 +1,7 @@
 import { Context } from 'grammy';
 import { Command } from '../../common/decorators/command.decorator';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { LlmService } from '../../llm/llm.service';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { TelegramCommand } from '../../app.types';
 
 @Injectable()
@@ -13,12 +12,9 @@ import { TelegramCommand } from '../../app.types';
 export class ChatCommand implements TelegramCommand {
   readonly name = 'chat';
   readonly description = 'Chat with AI assistant and perform actions';
+  private readonly logger = new Logger(ChatCommand.name);
 
-  constructor(
-    private readonly llmService: LlmService,
-    @InjectPinoLogger(ChatCommand.name)
-    private readonly logger: PinoLogger,
-  ) {}
+  constructor(private readonly llmService: LlmService) {}
 
   async execute(ctx: Context): Promise<void> {
     await ctx.reply(

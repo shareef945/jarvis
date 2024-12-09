@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as fileType from 'file-type';
@@ -6,7 +6,6 @@ import { FileDownloadDto } from './file-download.dto';
 import { ProgressCallback } from 'src/app.types';
 import { FileHelpers } from './file.helpers';
 import { AppConfig, InjectAppConfig } from 'src/app.config';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { HttpService } from '@nestjs/axios';
 import { MTProtoService } from './mtproto.service';
 import { firstValueFrom } from 'rxjs';
@@ -15,11 +14,11 @@ import { firstValueFrom } from 'rxjs';
 export class FileManagerService {
   private readonly downloadDir: string;
   private readonly adminChatId: string;
+  private readonly logger = new Logger(FileManagerService.name);
 
   constructor(
     @InjectAppConfig() private readonly appConfig: AppConfig,
-    @InjectPinoLogger(FileManagerService.name)
-    private readonly logger: PinoLogger,
+
     private readonly httpService: HttpService,
     private readonly mtProtoService: MTProtoService,
   ) {
@@ -48,7 +47,7 @@ export class FileManagerService {
       }
 
       const humanReadableSize = FileHelpers.formatSize(fileDto.fileSize);
-      this.logger.info(
+      this.logger.log(
         `Received file: ${fileDto.fileName} (${humanReadableSize})`,
       );
 
@@ -85,7 +84,7 @@ export class FileManagerService {
         throw new Error(`Invalid file type: ${type.mime}`);
       }
 
-      this.logger.info(`File downloaded successfully: ${filePath}`);
+      this.logger.log(`File downloaded successfully: ${filePath}`);
       return filePath;
     } catch (error) {
       if (filePath) {
@@ -133,7 +132,7 @@ export class FileManagerService {
         `File: ${data.fileName}\n` +
         `Size: ${data.fileSize}`;
 
-      this.logger.info(`Admin alert sent: ${alertMessage}`);
+      this.logger.log(`Admin alert sent: ${alertMessage}`);
     } catch (error) {
       this.logger.error('Failed to send alert to admin:', error);
     }
@@ -164,7 +163,7 @@ export class FileManagerService {
   async deleteFile(filePath: string): Promise<void> {
     try {
       await fs.unlink(filePath);
-      this.logger.info(`File deleted successfully: ${filePath}`);
+      this.logger.log(`File deleted successfully: ${filePath}`);
     } catch (error) {
       this.logger.error('Error deleting file:', error);
       throw error;
@@ -175,7 +174,7 @@ export class FileManagerService {
     try {
       await fs.mkdir(path.dirname(destinationPath), { recursive: true });
       await fs.rename(sourcePath, destinationPath);
-      this.logger.info(`File moved from ${sourcePath} to ${destinationPath}`);
+      this.logger.log(`File moved from ${sourcePath} to ${destinationPath}`);
     } catch (error) {
       this.logger.error('Error moving file:', error);
       throw error;
@@ -195,7 +194,7 @@ export class FileManagerService {
   private async cleanupFailedDownload(filePath: string): Promise<void> {
     try {
       await fs.unlink(filePath);
-      this.logger.info(`Cleaned up failed download: ${filePath}`);
+      this.logger.log(`Cleaned up failed download: ${filePath}`);
     } catch (error) {
       // Just log the error since this is a cleanup operation
       this.logger.warn(`Failed to clean up file ${filePath}:`, {
@@ -209,7 +208,7 @@ export class FileManagerService {
     try {
       await fs.mkdir(path.dirname(destinationPath), { recursive: true });
       await fs.copyFile(sourcePath, destinationPath);
-      this.logger.info(`File copied from ${sourcePath} to ${destinationPath}`);
+      this.logger.log(`File copied from ${sourcePath} to ${destinationPath}`);
     } catch (error) {
       this.logger.error('Error copying file:', error);
       throw error;

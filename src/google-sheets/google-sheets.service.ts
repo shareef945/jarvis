@@ -1,21 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { google } from 'googleapis';
 import { JWT } from 'google-auth-library';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { AppConfig, InjectAppConfig } from 'src/app.config';
 
 @Injectable()
 export class GoogleSheetsService {
   private sheets;
   private drive;
+  private readonly logger = new Logger(GoogleSheetsService.name);
   public currentWorkbook: string;
   public currentWorksheet: string;
 
-  constructor(
-    @InjectAppConfig() private readonly appConfig: AppConfig,
-    @InjectPinoLogger(GoogleSheetsService.name)
-    private readonly logger: PinoLogger,
-  ) {
+  constructor(@InjectAppConfig() private readonly appConfig: AppConfig) {
     this.initializeServices();
   }
 
@@ -112,7 +108,7 @@ export class GoogleSheetsService {
 
       this.sheets = google.sheets({ version: 'v4', auth });
       this.drive = google.drive({ version: 'v3', auth });
-      this.logger.info('Google sheet & drive initialized successfully');
+      this.logger.log('Google sheet & drive initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize Google services:', error);
       throw new Error('Failed to initialize Google services');
@@ -191,7 +187,7 @@ export class GoogleSheetsService {
           values: [rowData],
         },
       });
-      this.logger.info(
+      this.logger.log(
         `Payment recorded successfully for ${productId} - GHS ${amount.toString()}`,
       );
       return {
@@ -235,7 +231,7 @@ export class GoogleSheetsService {
           values: [rowData],
         },
       });
-      this.logger.info(
+      this.logger.log(
         `Payment recorded successfully for ${propertyId} - GHS ${amount.toString()}`,
       );
       return {
@@ -286,7 +282,7 @@ export class GoogleSheetsService {
         },
       });
 
-      this.logger.info(
+      this.logger.log(
         `Capex recorded successfully for ${propertyId} - GHS ${amount.toString()}`,
       );
 

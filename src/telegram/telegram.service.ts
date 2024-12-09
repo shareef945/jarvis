@@ -33,10 +33,31 @@ export class TelegramService implements OnModuleInit {
       this.logger.log('Telegram service initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize Telegram service:', error);
-      // Don't throw the error, just log it
-      // This allows the application to start even if Telegram fails
+      // Instead of silently continuing, we'll mark the service as initialized
+      // but in an error state
+      this.logger.warn(
+        'Telegram service will continue in limited functionality mode',
+      );
     }
   }
+
+  async getBotInfo() {
+    try {
+      if (!this.bot) {
+        return { status: 'not_initialized' };
+      }
+      const botInfo = await this.bot.api.getMe();
+      return {
+        status: 'active',
+        username: botInfo.username,
+        id: botInfo.id,
+      };
+    } catch (error) {
+      this.logger.error('Failed to get bot info:', error);
+      return { status: 'error', message: error.message };
+    }
+  }
+
   private async initializeBot() {
     try {
       if (!this.appConfig.telegram.botToken) {
@@ -44,16 +65,16 @@ export class TelegramService implements OnModuleInit {
       }
 
       this.bot = new Bot(this.appConfig.telegram.botToken);
+
+      // Register commands first
       await this.commandHandler.registerCommands(this.bot);
+
+      // Then set up file handler
       await this.setupFileHandler();
+
       this.logger.log('Bot initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize bot:', error);
-      await this.sendMessage(
-        this.appConfig.app.adminChatId,
-        `❌ Bot Initialization Failed\n\nError: ${error.message}\n\nCheck logs for details.`,
-        { parseMode: 'Markdown' },
-      ).catch((e) => this.logger.error('Failed to send error message:', e));
       throw error;
     }
   }

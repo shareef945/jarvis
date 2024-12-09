@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 import { HelpCommand } from './commands/help.command';
 import { DiscoveryModule } from '@nestjs/core';
@@ -14,6 +14,7 @@ import { RecordCapexCommand } from './commands/record-capex.command';
 import { MobileMoneyCommand } from './commands/mobile-money.command';
 import { MobileMoneyModule } from 'src/mobile-money/mobile-money.module';
 import { CommandRegistryService } from './command-registry.service';
+import { TelegramController } from './telegram.controller';
 
 @Module({
   imports: [
@@ -24,17 +25,19 @@ import { CommandRegistryService } from './command-registry.service';
     MobileMoneyModule,
   ],
   providers: [
+    Logger,
     TelegramService,
     CommandRegistryService,
     CommandHandler,
+    RolesGuard,
     HelpCommand,
     RecordPaymentCommand,
-    FileCommand,
-    RolesGuard,
+    // FileCommand,
     RecordMaintenanceCostCommand,
     RecordCapexCommand,
     MobileMoneyCommand,
   ],
+  controllers: [TelegramController],
   exports: [TelegramService],
 })
 export class TelegramModule {}
