@@ -1,5 +1,5 @@
 import { Context } from 'grammy';
-import { PinoLogger } from 'nestjs-pino';
+import { Logger } from '@nestjs/common'; // Change this import
 import { TelegramCommand } from 'src/app.types';
 import {
   COMMAND_METADATA,
@@ -10,8 +10,9 @@ export abstract class BaseCommand implements TelegramCommand {
   name: string;
   description: string;
   usage?: string;
+  protected readonly logger: Logger; // Change type to Logger
 
-  constructor(protected readonly logger: PinoLogger) {
+  constructor() {
     const metadata = Reflect.getMetadata(
       COMMAND_METADATA,
       this.constructor,
@@ -19,6 +20,7 @@ export abstract class BaseCommand implements TelegramCommand {
     this.name = metadata.name;
     this.description = metadata.description;
     this.usage = metadata.usage;
+    this.logger = new Logger(this.constructor.name); // Initialize logger with class name
   }
 
   abstract execute(ctx: Context): Promise<void>;

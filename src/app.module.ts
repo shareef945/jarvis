@@ -9,7 +9,6 @@ import { appConfig, validationSchema } from './app.config';
 import { LoggerModule } from './common/logger/logger.module';
 import { MobileMoneyModule } from './mobile-money/mobile-money.module';
 import { LlmModule } from './llm/llm.module';
-import { LlsService } from './llm/llm.service';
 
 @Module({
   imports: [
@@ -22,11 +21,11 @@ import { LlsService } from './llm/llm.service';
     LoggerModule,
     MobileMoneyModule,
     TelegramModule,
-    GoogleSheetsModule,
-    FileManagerModule,
-    LlmModule,
+    // GoogleSheetsModule,
+    // FileManagerModule,
+    // LlmModule,
   ],
   controllers: [AppController],
-  providers: [AppService, LlsService],
+  providers: [AppService],
 })
 export class AppModule {}

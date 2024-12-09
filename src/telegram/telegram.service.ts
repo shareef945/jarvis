@@ -1,7 +1,6 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Bot } from 'grammy';
 import { AppConfig, InjectAppConfig } from '../app.config';
-import { PinoLogger, InjectPinoLogger } from 'nestjs-pino';
 import { CommandHandler } from './commands/handler/command.handler';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -14,10 +13,10 @@ import { MTProtoService } from 'src/file-manager/mtproto.service';
 export class TelegramService implements OnModuleInit {
   private bot: Bot;
   private readonly baseUrl: string;
+  private readonly logger = new Logger(TelegramService.name);
 
   constructor(
     @InjectAppConfig() private readonly appConfig: AppConfig,
-    @InjectPinoLogger(TelegramService.name) private readonly logger: PinoLogger,
     private readonly commandHandler: CommandHandler,
     private readonly httpService: HttpService,
     private readonly mtProtoService: MTProtoService,
@@ -27,10 +26,17 @@ export class TelegramService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    await this.initializeBot();
-    await this.startBot();
+    try {
+      this.logger.log('Initializing Telegram service...');
+      await this.initializeBot();
+      await this.startBot();
+      this.logger.log('Telegram service initialized successfully');
+    } catch (error) {
+      this.logger.error('Failed to initialize Telegram service:', error);
+      // Don't throw the error, just log it
+      // This allows the application to start even if Telegram fails
+    }
   }
-
   private async initializeBot() {
     try {
       if (!this.appConfig.telegram.botToken) {
@@ -40,26 +46,26 @@ export class TelegramService implements OnModuleInit {
       this.bot = new Bot(this.appConfig.telegram.botToken);
       await this.commandHandler.registerCommands(this.bot);
       await this.setupFileHandler();
-      this.logger.info('Bot initialized successfully');
+      this.logger.log('Bot initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize bot:', error);
       await this.sendMessage(
         this.appConfig.app.adminChatId,
         `❌ Bot Initialization Failed\n\nError: ${error.message}\n\nCheck logs for details.`,
         { parseMode: 'Markdown' },
-      );
+      ).catch((e) => this.logger.error('Failed to send error message:', e));
       throw error;
     }
   }
 
   private async startBot() {
     try {
-      this.logger.info('Starting jarvis...');
+      this.logger.log('Starting jarvis...');
       await this.bot.api.setMyCommands(TELEGRAM_BOT_COMMANDS);
       await this.bot.start({
         drop_pending_updates: true,
         onStart: (botInfo) => {
-          this.logger.info(`Jarvis is online -  @${botInfo.username}`);
+          this.logger.log(`Jarvis is online -  @${botInfo.username}`);
         },
       });
     } catch (error) {

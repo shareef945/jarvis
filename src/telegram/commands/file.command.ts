@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { Context } from 'grammy';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Command } from 'src/common/decorators/command.decorator';
 import { BaseCommand } from './base.command';
 import { FileManagerService } from 'src/file-manager/file-manager.service';
@@ -12,12 +11,8 @@ import { FileManagerService } from 'src/file-manager/file-manager.service';
   usage: 'Send any video file to download it',
 })
 export class FileCommand extends BaseCommand {
-  constructor(
-    @InjectPinoLogger(FileCommand.name)
-    protected readonly logger: PinoLogger,
-    private readonly fileManagerService: FileManagerService,
-  ) {
-    super(logger);
+  constructor(private readonly fileManagerService: FileManagerService) {
+    super();
   }
 
   async execute(ctx: Context): Promise<void> {

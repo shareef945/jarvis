@@ -10,18 +10,14 @@ export class AppController {
     private readonly logger: PinoLogger,
   ) {}
 
-  @Get()
-  getHello(): string {
-    this.logger.info('Handling GET / request');
-    return this.appService.getHello();
-  }
-
   @Get('health')
   healthCheck() {
     this.logger.info('Health check endpoint called');
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memoryUsage: process.memoryUsage(),
     };
   }
 }

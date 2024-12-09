@@ -1,5 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { Injectable, Logger } from '@nestjs/common';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -7,10 +6,7 @@ const execAsync = promisify(exec);
 
 @Injectable()
 export class AdbService {
-  constructor(
-    @InjectPinoLogger(AdbService.name)
-    private readonly logger: PinoLogger,
-  ) {}
+  private readonly logger = new Logger(AdbService.name);
 
   async executeUssd(code: string): Promise<void> {
     try {

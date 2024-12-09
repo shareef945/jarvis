@@ -1,17 +1,16 @@
-import { Module } from '@nestjs/common';
-import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
+import { Global, Module } from '@nestjs/common';
+import { LoggerModule as PinoLoggerModule, Logger } from 'nestjs-pino';
 import { appConfig, AppConfig } from '../../app.config';
 
+@Global()
 @Module({
   imports: [
     PinoLoggerModule.forRootAsync({
       inject: [appConfig.KEY],
-      useFactory: (config: AppConfig) => {
-        const isProduction = config.app.env === 'prod';
-
-        return {
-          pinoHttp: {
-            transport: isProduction
+      useFactory: (config: AppConfig) => ({
+        pinoHttp: {
+          transport:
+            config.app.env === 'prod'
               ? undefined
               : {
                   target: 'pino-pretty',
@@ -22,13 +21,13 @@ import { appConfig, AppConfig } from '../../app.config';
                     translateTime: 'UTC:yyyy-mm-dd HH:MM:ss.l',
                   },
                 },
-            autoLogging: true,
-            level: isProduction ? 'info' : 'debug',
-          },
-        };
-      },
+          autoLogging: true,
+          level: config.app.env === 'prod' ? 'info' : 'debug',
+        },
+      }),
     }),
   ],
-  exports: [PinoLoggerModule],
+  providers: [Logger],
+  exports: [PinoLoggerModule, Logger],
 })
 export class LoggerModule {}

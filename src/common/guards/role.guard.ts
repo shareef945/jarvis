@@ -1,16 +1,20 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  Logger,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Context } from 'grammy';
 import { AppConfig, InjectAppConfig } from '../../app.config';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 @Injectable()
 export class RolesGuard implements CanActivate {
+  private readonly logger = new Logger(RolesGuard.name);
+
   constructor(
     private reflector: Reflector,
     @InjectAppConfig() private readonly appConfig: AppConfig,
-    @InjectPinoLogger(RolesGuard.name)
-    private readonly logger: PinoLogger,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {

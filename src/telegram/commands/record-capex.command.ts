@@ -1,6 +1,5 @@
 import { Injectable, UseGuards } from '@nestjs/common';
 import { Context } from 'grammy';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { GoogleSheetsService } from '../../google-sheets/google-sheets.service';
 import { Command } from 'src/common/decorators/command.decorator';
 import { BaseCommand } from './base.command';
@@ -29,14 +28,9 @@ interface PropertyCache {
 export class RecordCapexCommand extends BaseCommand {
   private propertyCache: PropertyCache = {};
 
-  constructor(
-    @InjectPinoLogger(RecordCapexCommand.name)
-    protected readonly logger: PinoLogger,
-    private readonly sheetsService: GoogleSheetsService,
-  ) {
-    super(logger);
+  constructor(private readonly sheetsService: GoogleSheetsService) {
+    super();
   }
-
   async execute(ctx: Context): Promise<void> {
     try {
       const config = this.sheetsService.GSHEET_CONFIGS.capex;

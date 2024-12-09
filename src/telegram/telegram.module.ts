@@ -13,6 +13,7 @@ import { RecordMaintenanceCostCommand } from './commands/record-maintenance-cost
 import { RecordCapexCommand } from './commands/record-capex.command';
 import { MobileMoneyCommand } from './commands/mobile-money.command';
 import { MobileMoneyModule } from 'src/mobile-money/mobile-money.module';
+import { CommandRegistryService } from './command-registry.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { MobileMoneyModule } from 'src/mobile-money/mobile-money.module';
   ],
   providers: [
     TelegramService,
+    CommandRegistryService,
     CommandHandler,
     HelpCommand,
     RecordPaymentCommand,

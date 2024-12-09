@@ -1,5 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { AdbService } from './adb.service';
@@ -13,35 +12,40 @@ export interface Contact {
 }
 
 @Injectable()
-export class ContactService {
+export class ContactService implements OnModuleInit {
   private contacts: Contact[] = [];
   private isConnected = false;
   private lastSyncTime?: Date;
   private retryCount = 0;
   private readonly MAX_RETRIES = 3;
+  private readonly logger = new Logger(ContactService.name);
 
-  constructor(
-    @InjectPinoLogger(ContactService.name)
-    private readonly logger: PinoLogger,
-    private readonly adbService: AdbService,
-  ) {
-    this.startAdbServer().catch((error) => {
-      this.logger.error('Failed to start ADB server:', error);
-    });
-
-    this.initializeContacts().catch((error) => {
+  constructor(private readonly adbService: AdbService) {}
+  async onModuleInit() {
+    try {
+      await this.startAdbServer();
+    } catch (error) {
       this.logger.warn(
-        'Initial contact load failed, will retry on next request',
+        'Failed to start ADB server - continuing anyway:',
         error,
       );
-    });
-  }
+    }
 
+    try {
+      await this.initializeContacts();
+    } catch (error) {
+      this.logger.warn(
+        'Initial contact load failed - will retry on next request:',
+        error,
+      );
+    }
+  }
   private async initializeContacts(): Promise<void> {
     try {
       await this.loadContacts();
     } catch (error) {
-      this.logger.error('Failed to initialize contacts:', error);
+      this.logger.warn('Failed to initialize contacts:', error);
+      // Don't throw error, just log it
     }
   }
 
@@ -49,10 +53,10 @@ export class ContactService {
     try {
       await execAsync('adb kill-server');
       await execAsync('adb start-server');
-      this.logger.info('ADB server started successfully');
+      this.logger.log('ADB server started successfully');
     } catch (error) {
-      this.logger.error('Failed to start ADB server:', error);
-      throw error;
+      this.logger.warn('Failed to start ADB server:', error);
+      // Don't throw error, just log it
     }
   }
 
@@ -181,9 +185,7 @@ export class ContactService {
       if (newContacts.length > 0) {
         this.contacts = newContacts;
         this.lastSyncTime = new Date();
-        this.logger.info(
-          `Loaded ${this.contacts.length} contacts successfully`,
-        );
+        this.logger.log(`Loaded ${this.contacts.length} contacts successfully`);
       } else {
         this.logger.warn('No valid contacts found in device');
         this.logger.debug('Raw data:', stdout);

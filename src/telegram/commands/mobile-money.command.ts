@@ -1,6 +1,5 @@
 import { Injectable, UseGuards } from '@nestjs/common';
 import { Context } from 'grammy';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Command } from 'src/common/decorators/command.decorator';
 import { BaseCommand } from '../../telegram/commands/base.command';
 import { RolesGuard } from 'src/common/guards/role.guard';
@@ -30,12 +29,8 @@ interface PaymentState {
 export class MobileMoneyCommand extends BaseCommand {
   private paymentStates: Map<number, PaymentState> = new Map();
 
-  constructor(
-    @InjectPinoLogger(MobileMoneyCommand.name)
-    protected readonly logger: PinoLogger,
-    private readonly mobileMoneyService: MobileMoneyService,
-  ) {
-    super(logger);
+  constructor(private readonly mobileMoneyService: MobileMoneyService) {
+    super();
   }
 
   async execute(ctx: Context): Promise<void> {

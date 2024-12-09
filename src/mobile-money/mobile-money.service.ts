@@ -1,17 +1,14 @@
-import { Injectable } from '@nestjs/common';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { Injectable, Logger } from '@nestjs/common';
 import { AdbService } from './adb.service';
 import { Contact, ContactService } from './contact.service';
 import { AppConfig, InjectAppConfig } from 'src/app.config';
 
 @Injectable()
 export class MobileMoneyService {
-  constructor(
-    @InjectPinoLogger(MobileMoneyService.name)
-    @InjectAppConfig()
-    private readonly appConfig: AppConfig,
+  private readonly logger = new Logger(MobileMoneyService.name);
 
-    private readonly logger: PinoLogger,
+  constructor(
+    @InjectAppConfig() private readonly appConfig: AppConfig,
     private readonly adbService: AdbService,
     private readonly contactService: ContactService,
   ) {}
@@ -127,7 +124,7 @@ export class MobileMoneyService {
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait before pressing enter
       await this.adbService.executeShellCommand('input keyevent 66'); // Enter
 
-      this.logger.info('Mobile money transfer completed successfully', {
+      this.logger.log('Mobile money transfer completed successfully', {
         phoneNumber,
         amount,
       });

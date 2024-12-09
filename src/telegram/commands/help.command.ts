@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { Context } from 'grammy';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { BaseCommand } from './base.command';
 import { Command } from 'src/common/decorators/command.decorator';
 import { generateHelpMessage } from 'src/app.const';
@@ -12,12 +11,8 @@ import { AppConfig, InjectAppConfig } from 'src/app.config';
   description: 'Show available commands',
 })
 export class HelpCommand extends BaseCommand {
-  constructor(
-    @InjectPinoLogger(HelpCommand.name)
-    protected readonly logger: PinoLogger,
-    @InjectAppConfig() private readonly appConfig: AppConfig,
-  ) {
-    super(logger);
+  constructor(@InjectAppConfig() private readonly appConfig: AppConfig) {
+    super();
   }
 
   async execute(ctx: Context): Promise<void> {

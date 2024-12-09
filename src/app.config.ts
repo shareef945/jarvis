@@ -77,6 +77,7 @@ export const validationSchema = Joi.object({
   USER_ROLES: Joi.string().required(),
   DOWNLOAD_DIR: Joi.string().required(),
   ADMIN_CHAT_ID: Joi.number().required(),
+  PORT: Joi.number().default(3000),
   GOOGLE_SERVICE_ACCOUNT_PATH: Joi.string().required(),
   MICROFINANCE_WORKBOOK_ID: Joi.string().required(),
   MINCROFINANCE_WORKBOOK_INPUT_SHEETNAME: Joi.string().required(),
