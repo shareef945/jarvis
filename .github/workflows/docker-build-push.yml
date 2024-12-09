@@ -41,9 +41,3 @@ jobs:
           platforms: linux/arm64
           cache-from: type=registry,ref=shareef945/jarvis:buildcache
           cache-to: type=registry,ref=shareef945/jarvis:buildcache,mode=max
-
-      - name: Trigger Coolify Redeploy
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_AUTH_TOKEN }}" \
-            "https://deploy.saitechnology.co/api/v1/deploy?uuid=jc0w8cks8wgck88ok848wg4c&force=false"
