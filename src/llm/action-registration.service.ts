@@ -1,7 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { MobileMoneyService } from '../mobile-money/mobile-money.service';
 import { GoogleSheetsService } from '../google-sheets/google-sheets.service';
-import { FileManagerService } from '../file-manager/file-manager.service';
 import { ActionRegistryService } from './action-registry.service';
 
 @Injectable()
@@ -10,7 +9,6 @@ export class ActionRegistrationService implements OnModuleInit {
     private readonly actionRegistry: ActionRegistryService,
     private readonly mobileMoneyService: MobileMoneyService,
     private readonly googleSheetsService: GoogleSheetsService,
-    private readonly fileManagerService: FileManagerService,
   ) {}
 
   onModuleInit() {

@@ -9,7 +9,7 @@ export class TelegramController {
   async getStatus() {
     return {
       status: 'ok',
-      botInfo: await this.telegramService.getBotInfo(),
+      botInfo: 'JARVIS',
     };
   }
 }

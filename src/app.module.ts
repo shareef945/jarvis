@@ -3,7 +3,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TelegramModule } from './telegram/telegram.module';
 import { GoogleSheetsModule } from './google-sheets/google-sheets.module';
-import { FileManagerModule } from './file-manager/file-manager.module';
 import { ConfigModule } from '@nestjs/config';
 import { appConfig, validationSchema } from './app.config';
 import { LoggerModule } from './common/logger/logger.module';
@@ -21,7 +20,6 @@ import { LlmModule } from './llm/llm.module';
     LoggerModule,
     MobileMoneyModule,
     GoogleSheetsModule,
-    FileManagerModule,
     TelegramModule,
     // LlmModule,
   ],

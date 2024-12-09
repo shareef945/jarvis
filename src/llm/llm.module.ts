@@ -5,7 +5,6 @@ import { ActionRegistryService } from './action-registry.service';
 import { ActionRegistrationService } from './action-registration.service';
 import { MobileMoneyModule } from '../mobile-money/mobile-money.module';
 import { GoogleSheetsModule } from '../google-sheets/google-sheets.module';
-import { FileManagerModule } from '../file-manager/file-manager.module';
 
 @Module({
   imports: [
@@ -15,7 +14,6 @@ import { FileManagerModule } from '../file-manager/file-manager.module';
     }),
     MobileMoneyModule,
     GoogleSheetsModule,
-    FileManagerModule,
   ],
   providers: [LlmService, ActionRegistryService, ActionRegistrationService],
   exports: [LlmService],

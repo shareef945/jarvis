@@ -5,10 +5,6 @@ import { CommandHandler } from './commands/handler/command.handler';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { TELEGRAM_BOT_COMMANDS } from 'src/app.const';
-import { FileDownloadDto } from 'src/file-manager/file-download.dto';
-import { FileManagerService } from 'src/file-manager/file-manager.service';
-import { MTProtoService } from 'src/file-manager/mtproto.service';
-
 @Injectable()
 export class TelegramService implements OnModuleInit {
   private bot: Bot;
@@ -19,8 +15,6 @@ export class TelegramService implements OnModuleInit {
     @InjectAppConfig() private readonly appConfig: AppConfig,
     private readonly commandHandler: CommandHandler,
     private readonly httpService: HttpService,
-    private readonly mtProtoService: MTProtoService,
-    private readonly fileManagerService: FileManagerService,
   ) {
     this.baseUrl = `https://api.telegram.org/bot${this.appConfig.telegram.botToken}`;
   }
@@ -29,33 +23,41 @@ export class TelegramService implements OnModuleInit {
     try {
       this.logger.log('Initializing Telegram service...');
       await this.initializeBot();
-      await this.startBot();
+
+      // Set up error handling for the bot
+      this.setupErrorHandling();
+
+      await this.startBot().catch((err) => {
+        this.logger.error('Failed to start bot:', err);
+        // Continue without throwing
+      });
+
       this.logger.log('Telegram service initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize Telegram service:', error);
-      // Instead of silently continuing, we'll mark the service as initialized
-      // but in an error state
       this.logger.warn(
         'Telegram service will continue in limited functionality mode',
       );
     }
   }
 
-  async getBotInfo() {
-    try {
-      if (!this.bot) {
-        return { status: 'not_initialized' };
-      }
-      const botInfo = await this.bot.api.getMe();
-      return {
-        status: 'active',
-        username: botInfo.username,
-        id: botInfo.id,
-      };
-    } catch (error) {
-      this.logger.error('Failed to get bot info:', error);
-      return { status: 'error', message: error.message };
+  private setupErrorHandling() {
+    if (!this.bot) {
+      this.logger.warn('Bot instance is not initialized for error handling');
+      return;
     }
+
+    this.bot.catch((err) => {
+      this.logger.error('Telegram bot error:', err);
+    });
+
+    // Handle API errors
+    this.bot.api.config.use((prev, method, payload) => {
+      return prev(method, payload).catch((error) => {
+        this.logger.error(`API error in method ${method}:`, error);
+        throw error;
+      });
+    });
   }
 
   private async initializeBot() {
@@ -66,11 +68,15 @@ export class TelegramService implements OnModuleInit {
 
       this.bot = new Bot(this.appConfig.telegram.botToken);
 
+      // Test the connection before proceeding
+      const botInfo = await this.bot.api.getMe().catch((err) => {
+        throw new Error(`Failed to connect to Telegram: ${err.message}`);
+      });
+
+      this.logger.log(`Bot connection test successful: @${botInfo.username}`);
+
       // Register commands first
       await this.commandHandler.registerCommands(this.bot);
-
-      // Then set up file handler
-      await this.setupFileHandler();
 
       this.logger.log('Bot initialized successfully');
     } catch (error) {
@@ -82,11 +88,18 @@ export class TelegramService implements OnModuleInit {
   private async startBot() {
     try {
       this.logger.log('Starting jarvis...');
-      await this.bot.api.setMyCommands(TELEGRAM_BOT_COMMANDS);
+
+      // Set commands first
+      await this.bot.api.setMyCommands(TELEGRAM_BOT_COMMANDS).catch((err) => {
+        this.logger.warn('Failed to set commands, continuing anyway:', err);
+      });
+
+      // Start the bot with specific update types
       await this.bot.start({
         drop_pending_updates: true,
+        allowed_updates: ['message', 'callback_query'],
         onStart: (botInfo) => {
-          this.logger.log(`Jarvis is online -  @${botInfo.username}`);
+          this.logger.log(`Jarvis is online - @${botInfo.username}`);
         },
       });
     } catch (error) {
@@ -122,53 +135,5 @@ export class TelegramService implements OnModuleInit {
       });
       throw error;
     }
-  }
-
-  private async setupFileHandler() {
-    this.bot.on('message:document', async (ctx) => {
-      try {
-        const document = ctx.message.document;
-        const sender = ctx.message.from;
-
-        // Create status message
-        const statusMessage = await ctx.reply('📥 Processing file...');
-
-        const fileDto: FileDownloadDto = {
-          fileName: document.file_name,
-          fileSize: document.file_size,
-          mimeType: document.mime_type,
-          sender: {
-            username: sender.username,
-            firstName: sender.first_name,
-            lastName: sender.last_name,
-          },
-        };
-
-        const startTime = Date.now();
-        let filePath: string;
-
-        // Use Bot API for all files
-        const file = await ctx.api.getFile(document.file_id);
-        filePath = await this.fileManagerService.downloadSmallFile(
-          file.file_path,
-          fileDto,
-        );
-
-        const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-        const minutes = Math.floor(elapsedTime / 60);
-        const seconds = elapsedTime % 60;
-
-        await ctx.api.editMessageText(
-          statusMessage.chat.id,
-          statusMessage.message_id,
-          `✅ File downloaded successfully!\n\n` +
-            `Path: ${filePath}\n` +
-            `Time: ${minutes}m ${seconds}s`,
-        );
-      } catch (error) {
-        this.logger.error('Error processing file:', error);
-        await ctx.reply('❌ Failed to process file: ' + error.message);
-      }
-    });
   }
 }

@@ -6,8 +6,6 @@ import { CommandHandler } from './commands/handler/command.handler';
 import { GoogleSheetsModule } from '../google-sheets/google-sheets.module';
 import { RecordPaymentCommand } from './commands/record-payment.command';
 import { HttpModule } from '@nestjs/axios';
-import { FileCommand } from './commands/file.command';
-import { FileManagerModule } from 'src/file-manager/file-manager.module';
 import { RolesGuard } from 'src/common/guards/role.guard';
 import { RecordMaintenanceCostCommand } from './commands/record-maintenance-cost.command';
 import { RecordCapexCommand } from './commands/record-capex.command';
@@ -17,13 +15,7 @@ import { CommandRegistryService } from './command-registry.service';
 import { TelegramController } from './telegram.controller';
 
 @Module({
-  imports: [
-    DiscoveryModule,
-    GoogleSheetsModule,
-    HttpModule,
-    FileManagerModule,
-    MobileMoneyModule,
-  ],
+  imports: [DiscoveryModule, GoogleSheetsModule, HttpModule, MobileMoneyModule],
   providers: [
     Logger,
     TelegramService,
@@ -32,7 +24,6 @@ import { TelegramController } from './telegram.controller';
     RolesGuard,
     HelpCommand,
     RecordPaymentCommand,
-    // FileCommand,
     RecordMaintenanceCostCommand,
     RecordCapexCommand,
     MobileMoneyCommand,
