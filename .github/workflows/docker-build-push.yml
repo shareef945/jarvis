@@ -41,3 +41,43 @@ jobs:
           platforms: linux/arm64
           cache-from: type=registry,ref=shareef945/jarvis:buildcache
           cache-to: type=registry,ref=shareef945/jarvis:buildcache,mode=max
+
+      # - name: Deploy to Staging Server
+      #   if: env.ENVIRONMENT == 'staging' && (steps.check-api.outputs.changed == 'true' || steps.check-communications.outputs.changed == 'true')
+      #   run: |
+      #     # Create backup of current deployment
+      #     ssh shareef@192.168.100.3 'cd /home/shareef/apps/swift && docker compose pull && \
+      #     cp docker-compose.yml docker-compose.yml.backup-$(date +%Y%m%d_%H%M%S) && \
+      #     echo ${{ env.VERSION }} > .current-version'
+
+      #     # Deploy new version
+      #     ssh shareef@192.168.100.3 '
+      #       cd /home/shareef/apps/swift && \
+      #       docker compose pull && \
+      #       docker compose up -d --remove-orphans && \
+      #       ./health-check.sh || (docker compose -f docker-compose.yml.backup-* up -d && exit 1)
+      #     '
+
+      # - name: Send Telegram notification
+      #   if: always() && (steps.check-api.outputs.changed == 'true' || steps.check-communications.outputs.changed == 'true')
+      #   uses: appleboy/telegram-action@master
+      #   with:
+      #     to: ${{ secrets.TELEGRAM_CHAT_ID }}
+      #     token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      #     message: |
+      #       ${{ job.status == 'success' && '🚀' || '❌' }} ${{ env.ENVIRONMENT == 'prod' && 'Production' || 'Staging' }} Deployment Status
+
+      #       Changes detected in:
+      #       ${{ steps.check-api.outputs.changed == 'true' && '- API' || '' }}
+      #       ${{ steps.check-communications.outputs.changed == 'true' && '- Communications' || '' }}
+
+      #       Environment: ${{ env.ENVIRONMENT }}
+      #       Status: ${{ job.status == 'success' && 'Success ✅' || 'Failed ❌' }}
+
+      #       ${{ env.ENVIRONMENT == 'prod' && format('Server Status:
+      #       - Server 1: {0}
+      #       - Server 2: {1}',
+      #       steps.prod-deploy.outputs.prod1_status == '0' && '✅' || '❌',
+      #       steps.prod-deploy.outputs.prod2_status == '0' && '✅' || '❌') || '' }}
+
+      #       ${{ job.status != 'success' && '⚠️ Check GitHub Actions for detailed error logs' || '' }}

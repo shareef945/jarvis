@@ -20,4 +20,9 @@ export class AppController {
       memoryUsage: process.memoryUsage(),
     };
   }
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
 }
