@@ -1,34 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { ConfigType, registerAs } from '@nestjs/config';
 import * as Joi from 'joi';
-
-function parseUserRoles(rolesString: string = ''): Record<number, string> {
-  if (!rolesString) {
-    console.warn('No USER_ROLES environment variable found');
-    return {};
-  }
-
-  const roles = rolesString
-    .split(',')
-    .filter((role) => role.includes(':'))
-    .reduce(
-      (acc, role) => {
-        const [userId, userRole] = role.split(':');
-        const parsedId = parseInt(userId);
-
-        if (isNaN(parsedId)) {
-          console.warn(`Invalid user ID in role configuration: ${userId}`);
-          return acc;
-        }
-
-        acc[parsedId] = userRole;
-        return acc;
-      },
-      {} as Record<number, string>,
-    );
-
-  return roles;
-}
+import { parseUserRoles } from './app.utils';
 
 export const appConfig = registerAs('app', () => {
   return {
@@ -38,6 +11,15 @@ export const appConfig = registerAs('app', () => {
       botToken: process.env.BOT_TOKEN,
     },
     momo: { pin: process.env.MOMO_PIN },
+    baseUrl: { production: process.env.BASE_URL_PROD },
+    notion: {
+      apiKey: process.env.NOTION_API_KEY,
+      db: {
+        projects: process.env.NOTION_PROJECTS_DATABASE_ID,
+        companies: process.env.NOTION_COMPANIES_DATABASE_ID,
+        deals: process.env.NOTION_DEALS_DATABASE_ID,
+      },
+    },
     google: {
       serviceAccountPath: process.env.GOOGLE_SERVICE_ACCOUNT_PATH,
       sheets: {
@@ -77,6 +59,11 @@ export const validationSchema = Joi.object({
   USER_ROLES: Joi.string().required(),
   DOWNLOAD_DIR: Joi.string().required(),
   ADMIN_CHAT_ID: Joi.number().required(),
+  BASE_URL_PROD: Joi.string().required(),
+  NOTION_API_KEY: Joi.string().required(),
+  NOTION_PROJECTS_DATABASE_ID: Joi.string().required(),
+  NOTION_COMPANIES_DATABASE_ID: Joi.string().required(),
+  NOTION_DEALS_DATABASE_ID: Joi.string().required(),
   PORT: Joi.number().default(3000),
   GOOGLE_SERVICE_ACCOUNT_PATH: Joi.string().required(),
   MICROFINANCE_WORKBOOK_ID: Joi.string().required(),

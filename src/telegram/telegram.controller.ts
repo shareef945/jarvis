@@ -7,9 +7,10 @@ export class TelegramController {
 
   @Get('status')
   async getStatus() {
+    const botInfo = await this.telegramService.getBotInfo();
     return {
       status: 'ok',
-      botInfo: 'JARVIS',
+      botInfo: botInfo || 'Bot not initialized',
     };
   }
 }

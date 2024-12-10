@@ -8,6 +8,8 @@ import { appConfig, validationSchema } from './app.config';
 import { LoggerModule } from './common/logger/logger.module';
 import { MobileMoneyModule } from './mobile-money/mobile-money.module';
 import { LlmModule } from './llm/llm.module';
+import { NotionModule } from './notion/notion.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { LlmModule } from './llm/llm.module';
     MobileMoneyModule,
     GoogleSheetsModule,
     TelegramModule,
+    NotionModule,
+    ReportsModule,
     // LlmModule,
   ],
   controllers: [AppController],

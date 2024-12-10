@@ -40,11 +40,6 @@ export const TELEGRAM_BOT_COMMANDS = [
     description: 'record money received from loan',
     role: 'admin',
   },
-  {
-    command: 'file',
-    description: 'handle file uploads and downloads',
-    role: 'guest',
-  },
 ] as const;
 
 export const generateHelpMessage = (userRole: string = 'guest') => {

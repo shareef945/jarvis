@@ -81,42 +81,76 @@ export class CommandHandler implements OnModuleInit {
   }
 
   async registerCommands(bot: Bot) {
-    if (!this.isInitialized) {
-      await this.discoverCommands();
-      this.isInitialized = true;
+    try {
+      if (!bot) {
+        this.logger.warn('Bot not initialized - skipping command registration');
+        return;
+      }
+
+      if (!this.isInitialized) {
+        try {
+          await this.discoverCommands();
+          this.isInitialized = true;
+        } catch (error) {
+          this.logger.error('Error during command discovery:', error);
+          return; // Exit early if commands cannot be discovered
+        }
+      }
+
+      this.logger.debug('Registering bot command handlers...');
+
+      // Get commands from registry
+      let commands;
+      try {
+        commands = this.commandRegistry.getRegisteredCommands();
+      } catch (error) {
+        this.logger.error('Error retrieving registered commands:', error);
+        return; // Exit early if commands cannot be retrieved
+      }
+
+      // Register command handlers
+      commands.forEach((command) => {
+        try {
+          this.logger.debug(`Registering command handler: ${command.name}`);
+          bot.command(command.name, (ctx) => this.handleCommand(command, ctx));
+        } catch (error) {
+          this.logger.error(
+            `Error registering command handler for ${command.name}:`,
+            error,
+          );
+        }
+      });
+
+      // Register callback query handlers
+      bot.on('callback_query:data', async (ctx) => {
+        try {
+          await this.commandRegistry.handleCallback(ctx);
+        } catch (error) {
+          this.logger.error('Error in callback query handler:', error);
+          await ctx.reply(
+            '❌ An error occurred while processing your request.',
+          );
+        }
+      });
+
+      // Register message handlers
+      bot.on('message:text', async (ctx) => {
+        try {
+          await this.commandRegistry.handleMessage(ctx);
+        } catch (error) {
+          this.logger.error('Error in message handler:', error);
+          await ctx.reply(
+            '❌ An error occurred while processing your message.',
+          );
+        }
+      });
+
+      this.logger.log('Bot command handlers registered successfully');
+    } catch (error) {
+      this.logger.error(
+        'Unexpected error during bot command registration:',
+        error,
+      );
     }
-
-    this.logger.debug('Registering bot command handlers...');
-
-    // Get commands from registry
-    const commands = this.commandRegistry.getRegisteredCommands();
-
-    // Register command handlers
-    commands.forEach((command) => {
-      this.logger.debug(`Registering command handler: ${command.name}`);
-      bot.command(command.name, (ctx) => this.handleCommand(command, ctx));
-    });
-
-    // Register callback query handlers
-    bot.on('callback_query:data', async (ctx) => {
-      try {
-        await this.commandRegistry.handleCallback(ctx);
-      } catch (error) {
-        this.logger.error('Error in callback query handler:', error);
-        await ctx.reply('❌ An error occurred while processing your request.');
-      }
-    });
-
-    // Register message handlers
-    bot.on('message:text', async (ctx) => {
-      try {
-        await this.commandRegistry.handleMessage(ctx);
-      } catch (error) {
-        this.logger.error('Error in message handler:', error);
-        await ctx.reply('❌ An error occurred while processing your message.');
-      }
-    });
-
-    this.logger.log('Bot command handlers registered successfully');
   }
 }

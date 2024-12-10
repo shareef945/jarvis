@@ -22,14 +22,19 @@ export class TelegramService implements OnModuleInit {
   async onModuleInit() {
     try {
       this.logger.log('Initializing Telegram service...');
-      await this.initializeBot();
 
-      // Set up error handling for the bot
+      // Only initialize if token is configured
+      if (!this.appConfig.telegram.botToken) {
+        this.logger.warn(
+          'Telegram bot token not configured - skipping initialization',
+        );
+        return;
+      }
+      await this.initializeBot();
       this.setupErrorHandling();
 
       await this.startBot().catch((err) => {
         this.logger.error('Failed to start bot:', err);
-        // Continue without throwing
       });
 
       this.logger.log('Telegram service initialized successfully');
@@ -86,6 +91,10 @@ export class TelegramService implements OnModuleInit {
   }
 
   private async startBot() {
+    if (!this.bot) {
+      this.logger.warn('Bot not initialized - cannot start');
+      return;
+    }
     try {
       this.logger.log('Starting jarvis...');
 
@@ -95,7 +104,7 @@ export class TelegramService implements OnModuleInit {
       });
 
       // Start the bot with specific update types
-      await this.bot.start({
+      this.bot.start({
         drop_pending_updates: true,
         allowed_updates: ['message', 'callback_query'],
         onStart: (botInfo) => {
@@ -104,7 +113,7 @@ export class TelegramService implements OnModuleInit {
       });
     } catch (error) {
       this.logger.error('Failed to start bot:', error);
-      throw error;
+      // throw error;
     }
   }
 
@@ -135,5 +144,12 @@ export class TelegramService implements OnModuleInit {
       });
       throw error;
     }
+  }
+
+  async getBotInfo() {
+    if (!this.bot) {
+      return null;
+    }
+    return await this.bot.api.getMe();
   }
 }
