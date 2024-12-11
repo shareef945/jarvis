@@ -23,8 +23,6 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    this.logger.debug('Checking roles:', { requiredRoles });
-
     if (!requiredRoles?.length) {
       this.logger.debug('No roles required');
       return true;
@@ -33,11 +31,11 @@ export class RolesGuard implements CanActivate {
     const ctx = context.getArgByIndex(0) as Context;
     const userId = ctx.from?.id;
 
-    this.logger.debug('User details:', {
-      userId,
-      configuredRoles: this.appConfig.app.userRoles,
-      userRole: userId ? this.appConfig.app.userRoles[userId] : undefined,
-    });
+    // this.logger.debug('User details:', {
+    //   userId,
+    //   configuredRoles: this.appConfig.app.userRoles,
+    //   userRole: userId ? this.appConfig.app.userRoles[userId] : undefined,
+    // });
 
     if (!userId || !this.appConfig.app.userRoles[userId]) {
       this.logger.warn('User has no role:', { userId });
@@ -48,11 +46,11 @@ export class RolesGuard implements CanActivate {
       this.appConfig.app.userRoles[userId],
     );
 
-    this.logger.debug('Access check result:', {
-      hasAccess,
-      userRole: this.appConfig.app.userRoles[userId],
-      requiredRoles,
-    });
+    // this.logger.debug('Access check result:', {
+    //   hasAccess,
+    //   userRole: this.appConfig.app.userRoles[userId],
+    //   requiredRoles,
+    // });
 
     return hasAccess;
   }
