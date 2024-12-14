@@ -1,6 +1,8 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { join } from 'path';
+import { Response } from 'express';
 
 @Controller()
 export class AppController {
@@ -22,7 +24,8 @@ export class AppController {
   }
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getStaticImage(@Res() res: Response): void {
+    const imagePath = join(__dirname, '..', 'public/images/jarvis.png');
+    res.sendFile(imagePath);
   }
 }

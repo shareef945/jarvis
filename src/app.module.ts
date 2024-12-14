@@ -10,6 +10,8 @@ import { MobileMoneyModule } from './mobile-money/mobile-money.module';
 import { LlmModule } from './llm/llm.module';
 import { NotionModule } from './notion/notion.module';
 import { ReportsModule } from './reports/reports.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -18,6 +20,9 @@ import { ReportsModule } from './reports/reports.module';
       load: [appConfig],
       validationSchema,
       cache: true,
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
     }),
     LoggerModule,
     MobileMoneyModule,
