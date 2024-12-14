@@ -57,9 +57,8 @@ jobs:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           message: |
-            🚀 Production Deployment Status
+            🚀 Jarvis Deployment Status
 
-            Environment: Production
             Status: Success ✅
 
       - name: Send Telegram notification (failure)
@@ -69,8 +68,7 @@ jobs:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           message: |
-            ❌ Production Deployment Status
+            ❌ Jarvis Deployment Status
 
-            Environment: Production
             Status: Failed ❌
             ⚠️ Check GitHub Actions for detailed error logs.
