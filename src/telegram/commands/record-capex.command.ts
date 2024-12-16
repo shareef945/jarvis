@@ -28,6 +28,8 @@ interface PropertyCache {
 export class RecordCapexCommand extends BaseCommand {
   private propertyCache: PropertyCache = {};
 
+  readonly callbackPatterns = ['record_capex_callback:'];
+
   constructor(private readonly sheetsService: GoogleSheetsService) {
     super();
   }

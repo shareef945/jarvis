@@ -294,7 +294,7 @@ export class GoogleSheetsService {
         date: today,
       };
 
-      this.logger.debug('Returning result:', result);
+      // this.logger.debug('Returning result:', result);
       return result;
     } catch (error) {
       this.logger.error('Error recording capex:', {

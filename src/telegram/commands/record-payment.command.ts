@@ -28,6 +28,8 @@ interface ProductCache {
 export class RecordPaymentCommand extends BaseCommand {
   private productCache: ProductCache = {};
 
+  readonly callbackPatterns = ['record_payment_callback:'];
+
   constructor(private readonly sheetsService: GoogleSheetsService) {
     super();
   }

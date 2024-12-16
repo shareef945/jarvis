@@ -29,6 +29,8 @@ interface PaymentState {
 export class MobileMoneyCommand extends BaseCommand {
   private paymentStates: Map<number, PaymentState> = new Map();
 
+  readonly callbackPatterns = ['send_money_contact:'];
+
   constructor(private readonly mobileMoneyService: MobileMoneyService) {
     super();
   }

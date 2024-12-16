@@ -13,6 +13,7 @@ export class ChatCommand implements TelegramCommand {
   readonly name = 'chat';
   readonly description = 'Chat with AI assistant and perform actions';
   private readonly logger = new Logger(ChatCommand.name);
+  readonly callbackPatterns = ['execute_', 'cancel_action'];
 
   constructor(private readonly llmService: LlmService) {}
 
