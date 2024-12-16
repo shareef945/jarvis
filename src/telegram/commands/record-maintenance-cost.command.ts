@@ -39,6 +39,8 @@ const MAINTENANCE_CATEGORIES = [
 export class RecordMaintenanceCostCommand extends BaseCommand {
   private propertyCache: PropertyCache = {};
 
+  readonly callbackPatterns = ['maintenance_category:'];
+
   constructor(private readonly sheetsService: GoogleSheetsService) {
     super();
   }

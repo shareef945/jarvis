@@ -6,6 +6,7 @@ export interface TelegramCommand {
   execute(ctx: Context): Promise<void>;
   handleCallback?(ctx: Context): Promise<void>;
   handleMessage?(ctx: Context): Promise<void>;
+  callbackPatterns?: string[];
 }
 
 export interface ProgressCallback {
