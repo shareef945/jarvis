@@ -17,7 +17,7 @@ export class ContactService implements OnModuleInit {
   private isConnected = false;
   private lastSyncTime?: Date;
   private retryCount = 0;
-  private readonly MAX_RETRIES = 3;
+  private readonly MAX_RETRIES = 0;
   private readonly logger = new Logger(ContactService.name);
 
   constructor(private readonly adbService: AdbService) {}

@@ -17,7 +17,7 @@ export class CommandHandler implements OnModuleInit {
   constructor(
     private readonly discoveryService: DiscoveryService,
     private readonly rolesGuard: RolesGuard,
-    private readonly commandRegistry: CommandRegistryService,
+    public commandRegistry: CommandRegistryService,
   ) {}
 
   async onModuleInit() {

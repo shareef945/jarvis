@@ -1,10 +1,8 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
-import { LlmService } from './llm.service';
-import { ActionRegistryService } from './action-registry.service';
-import { ActionRegistrationService } from './action-registration.service';
 import { MobileMoneyModule } from '../mobile-money/mobile-money.module';
 import { GoogleSheetsModule } from '../google-sheets/google-sheets.module';
+import { AiAssistantService } from './ai-assistant.service';
 
 @Module({
   imports: [
@@ -15,7 +13,7 @@ import { GoogleSheetsModule } from '../google-sheets/google-sheets.module';
     MobileMoneyModule,
     GoogleSheetsModule,
   ],
-  providers: [LlmService, ActionRegistryService, ActionRegistrationService],
-  exports: [LlmService],
+  providers: [AiAssistantService],
+  exports: [AiAssistantService],
 })
 export class LlmModule {}

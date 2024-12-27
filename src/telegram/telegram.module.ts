@@ -13,9 +13,16 @@ import { MobileMoneyCommand } from './commands/mobile-money.command';
 import { MobileMoneyModule } from 'src/mobile-money/mobile-money.module';
 import { CommandRegistryService } from './command-registry.service';
 import { TelegramController } from './telegram.controller';
+import { LlmModule } from 'src/llm/llm.module';
 
 @Module({
-  imports: [DiscoveryModule, GoogleSheetsModule, HttpModule, MobileMoneyModule],
+  imports: [
+    DiscoveryModule,
+    GoogleSheetsModule,
+    HttpModule,
+    MobileMoneyModule,
+    LlmModule,
+  ],
   providers: [
     Logger,
     TelegramService,
