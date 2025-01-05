@@ -7,7 +7,6 @@ import { ConfigModule } from '@nestjs/config';
 import { appConfig, validationSchema } from './app.config';
 import { LoggerModule } from './common/logger/logger.module';
 import { MobileMoneyModule } from './mobile-money/mobile-money.module';
-import { LlmModule } from './llm/llm.module';
 import { NotionModule } from './notion/notion.module';
 import { ReportsModule } from './reports/reports.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -30,7 +29,6 @@ import { join } from 'path';
     TelegramModule,
     NotionModule,
     ReportsModule,
-    // LlmModule,
   ],
   controllers: [AppController],
   providers: [AppService],

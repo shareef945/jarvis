@@ -13,7 +13,7 @@ import { MobileMoneyCommand } from './commands/mobile-money.command';
 import { MobileMoneyModule } from 'src/mobile-money/mobile-money.module';
 import { CommandRegistryService } from './command-registry.service';
 import { TelegramController } from './telegram.controller';
-import { LlmModule } from 'src/llm/llm.module';
+import { AgentModule } from 'src/agent/agent.module';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { LlmModule } from 'src/llm/llm.module';
     GoogleSheetsModule,
     HttpModule,
     MobileMoneyModule,
-    LlmModule,
+    AgentModule,
   ],
   providers: [
     Logger,

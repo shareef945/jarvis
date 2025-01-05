@@ -5,7 +5,7 @@ import { CommandHandler } from './commands/handler/command.handler';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { TELEGRAM_BOT_COMMANDS } from 'src/app.const';
-import { AiAssistantService } from 'src/llm/ai-assistant.service';
+import { AiAssistantService } from 'src/agent/ai-assistant.service';
 @Injectable()
 export class TelegramService implements OnModuleInit {
   private bot: Bot;

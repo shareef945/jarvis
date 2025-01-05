@@ -16,4 +16,4 @@ import { AiAssistantService } from './ai-assistant.service';
   providers: [AiAssistantService],
   exports: [AiAssistantService],
 })
-export class LlmModule {}
+export class AgentModule {}
