@@ -9,18 +9,15 @@ import { appConfig, AppConfig } from '../../app.config';
       inject: [appConfig.KEY],
       useFactory: (config: AppConfig) => ({
         pinoHttp: {
-          transport:
-            config.app.env === 'prod'
-              ? undefined
-              : {
-                  target: 'pino-pretty',
-                  options: {
-                    colorize: true,
-                    ignore: 'pid,hostname',
-                    singleLine: true,
-                    translateTime: 'UTC:yyyy-mm-dd HH:MM:ss.l',
-                  },
-                },
+          transport: {
+            target: 'pino-pretty',
+            options: {
+              colorize: true,
+              ignore: 'pid,hostname',
+              singleLine: true,
+              translateTime: 'UTC:yyyy-mm-dd HH:MM:ss.l',
+            },
+          },
           autoLogging: true,
           level: config.app.env === 'prod' ? 'info' : 'debug',
         },
