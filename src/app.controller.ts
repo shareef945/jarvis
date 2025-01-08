@@ -1,20 +1,17 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Res, Logger } from '@nestjs/common';
 import { AppService } from './app.service';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { join } from 'path';
 import { Response } from 'express';
 
 @Controller()
 export class AppController {
-  constructor(
-    private readonly appService: AppService,
-    @InjectPinoLogger(AppController.name)
-    private readonly logger: PinoLogger,
-  ) {}
+  private readonly logger = new Logger(AppController.name);
+
+  constructor(private readonly appService: AppService) {}
 
   @Get('health')
   healthCheck() {
-    this.logger.info('Health check endpoint called');
+    this.logger.log('Health check endpoint called');
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
